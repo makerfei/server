@@ -7,8 +7,10 @@ const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
 const session = require('koa-session');
 const adminIndex = require('./routes/checkLand')
-const users = require('./routes/admin/users')
-
+const users = require('./routes/users')
+const order = require('./routes/order')
+const discounts = require('./routes/discounts')
+const comm = require('./routes/comm')
 // error handler
 onerror(app)
 
@@ -51,6 +53,10 @@ app.use(async (ctx, next) => {
 //app登录限制
 adminIndex(app);
 
+
+app.use(comm.routes(), comm.allowedMethods())
+app.use(discounts.routes(), discounts.allowedMethods())
+app.use(order.routes(), order.allowedMethods())
 app.use(users.routes(), users.allowedMethods())
 
 // error-handling
