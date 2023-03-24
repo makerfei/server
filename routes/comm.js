@@ -1,7 +1,30 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
+const fs = require('fs')
+const path = require('path')
+var multiparty = require('multiparty');
+var formidable = require('formidable');
+const email = require('../tool/nodemailer')
 router.prefix('/api')
-const svgCaptcha = require('svg-captcha')
+
+
+
+//发送邮件
+router.all('/email', async function (ctx, next) {
+  var mail = {
+      // 发件人
+      from: '美国代购<maker_wx1018@163.com>',
+      // 主题
+      subject: '接受凭证',//邮箱主题
+      // 收件人
+      to: 'maker.wx@gmail.com',//前台传过来的邮箱
+      // 邮件内容，HTML格式
+      text: '用' + 32323 + '作为你的验证码'//发送验证码
+  };
+  await email(mail);
+  ctx.body = { code: 0, mes: "成功" }
+})
+
 router.get('/banner/list', async function (ctx, next) {
   ctx.body = { "code": 0, "data": [{ "businessId": 0, "dateAdd": "2022-05-05 11:26:09", "id": 222083, "linkType": 0, "linkUrl": "https://gitee.com/joeshu/v-shop", "paixu": 0, "picUrl": "https://dcdn.it120.cc/2022/05/05/ac956ae3-151f-418e-b0e9-fadd76a9ea6d.jpeg", "remark": "跳转gitee v-shop", "shopId": 0, "status": 0, "statusStr": "显示", "title": "首页Banner4", "type": "indexBanner", "userId": 1605 }, { "businessId": 0, "dateAdd": "2022-02-02 16:04:11", "dateUpdate": "2022-02-02 16:19:17", "id": 204167, "linkType": 0, "linkUrl": "https://github.com/JoeshuTT/v-shop", "paixu": 0, "picUrl": "https://dcdn.it120.cc/2022/02/02/d0442c95-cd44-435a-888d-2539c5399334.png", "remark": "跳转github v-shop", "shopId": 0, "status": 0, "statusStr": "显示", "title": "首页banner3", "type": "indexBanner", "userId": 1605 }, { "businessId": 0, "dateAdd": "2017-12-04 10:35:09", "dateUpdate": "2022-02-02 16:19:07", "id": 2772, "linkType": 0, "linkUrl": "", "paixu": 2, "picUrl": "https://cdn.it120.cc/apifactory/2019/06/18/4c458676-85bb-4271-91a6-79ed9fc47545.jpg", "remark": "", "shopId": 0, "status": 0, "statusStr": "显示", "title": "首页banner2", "type": "indexBanner", "userId": 1605 }, { "businessId": 0, "dateAdd": "2017-12-04 10:34:35", "dateUpdate": "2022-02-02 16:19:13", "id": 2771, "linkType": 0, "linkUrl": "", "paixu": 2, "picUrl": "https://cdn.it120.cc/apifactory/2019/06/18/06b337d7-92a1-498b-8142-5c5951e8fb97.jpg", "remark": "", "shopId": 0, "status": 0, "statusStr": "显示", "title": "首页banner1", "type": "indexBanner", "userId": 1605 }], "msg": "success" }
 })
@@ -89,30 +112,33 @@ router.post('/score/logs', async function (ctx, next) {
 
 
 
-router.get('/verification/pic/get', async function (ctx, next) {
-  let svg = svgCaptcha.create({
-    height: 40,
-    width: 160,
-    size: 4,
-    ignoreChars: '0o1i', // 验证码字符中排除 0o1i
-    color: 'blue',
-    background: '#ccc',
-    noise: 2,
-  });
-  ctx.session.imgCode = svg.text;
-  // 指定返回的类型
-  ctx.response.type = 'image/svg+xml';
-  ctx.body = svg.data;
 
-})
 
-router.get('/verification/sms/get', async function (ctx, next) {
-  ctx.body = { "code": 0, "msg": "success" };
-})
 
+
+
+const getPostData = (ctx) => {
+  return new Promise(function (resolve, reject) {//需要返回一个promise对象
+    try {
+      let str = '';
+      ctx.req.on('data', function (chunk) {
+        str += chunk;
+      })
+      ctx.req.on('end', function (chunk) {
+        resolve(str);
+      })
+    } catch (err) {
+      reject(err);
+    }
+  })
+}
 
 router.post('/dfs/upload/file', async function (ctx, next) {
-  ctx.body = {"code":0,"data":{"id":"3090661","msg":"SUCCESS","name":"cuser/1605/2023/03/24/7687072f-093f-4f2d-8620-a7703fcfc931.png","originalName":"20da2bc9-bb53-4183-a553-d1b4805f4ed6.png","size":"2318","type":".png","url":"https://dcdn.it120.cc/cuser/1605/2023/03/24/7687072f-093f-4f2d-8620-a7703fcfc931.png"},"msg":"success"}
+  let form = new formidable.IncomingForm()
+  form.parse(ctx.req, function (err, fields, files) {
+    fs.copyFileSync(files.upfile.filepath, path.join(__dirname, '../public/upload', '111.png'))
+  })
+  ctx.body = { "code": 0, "data": { "id": "3090661", "msg": "SUCCESS", "name": "cuser/1605/2023/03/24/7687072f-093f-4f2d-8620-a7703fcfc931.png", "originalName": "20da2bc9-bb53-4183-a553-d1b4805f4ed6.png", "size": "2318", "type": ".png", "url": "https://dcdn.it120.cc/cuser/1605/2023/03/24/7687072f-093f-4f2d-8620-a7703fcfc931.png" }, "msg": "success" }
 })
 
 

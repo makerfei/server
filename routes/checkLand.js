@@ -1,8 +1,11 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
-const email = require('../tool/nodemailer')
+
+const svgCaptcha = require('svg-captcha')
+router.prefix('/api')
+
 //登录
-router.post('/api/login', async function (ctx, next) {
+router.post('/login', async function (ctx, next) {
     const { mobile, deviceId, deviceName, pwd, token } = ctx?.request?.body;
     let res = await sql.promiseCall(`select id from user where password = '${pwd}' and mobile = '${mobile}'`);
     if (res.results && res.results.length > 0) {
@@ -11,73 +14,128 @@ router.post('/api/login', async function (ctx, next) {
         ctx.body = {
             code: 0,
             "data": { "token": res.results[0].id, "uid": res.results[0].id },
-            mes: "登录成功"
+            msg: "登录成功"
         }
     } else {
-        ctx.body = { code: -2, mes: "登录失败，密码或账号错误" }
+        ctx.body = { code: -1, msg: "登录失败，密码或账号错误" }
     }
 })
 
 
-router.post('/api/loginMobile', async function (ctx, next) {
+router.post('/loginMobile', async function (ctx, next) {
+    let errText = "";
+    let insertId = "";
     const { mobile, deviceId, deviceName, code, autoReg, token } = ctx?.request?.body;
-    let res = await sql.promiseCall(`select id from user where  mobile = '${mobile}'`);
-    if (res.results && res.results.length > 0) {
-        ctx.session.userId = res.results[0].id;
-        let a = await sql.promiseCall(`update user set last_login_ip = '${ctx.ip}' ,last_login_time = ${Number(new Date().getTime() / 1000).toFixed(0)}  where id =${res.results[0].id}`);
+    //判断验证码
+    if (ctx.session.RegisterSMSVerificationCode !== code || ctx.session.imgCodeMobile !== mobile) {
+        errText = "短信验证码错误"
+    }
+    if (!errText) {
+        let res = await sql.promiseCall(`select id from user where  mobile = '${mobile}'`);
+        if (!res.error && res.results.length > 0) {
+            await sql.promiseCall(`update user set last_login_ip = '${ctx.ip}' ,last_login_time = ${Number(new Date().getTime() / 1000).toFixed(0)}  where id =${res.results[0].id}`);
+            insertId = res.results[0].id;
+        } else {
+            errText = "请先注册！"
+        }
+    }
+    if (!errText) {
+        ctx.session.userId = insertId;
         ctx.body = {
             code: 0,
-            "data": { "token": res.results[0].id, "uid": res.results[0].id },
-            mes: "登录成功"
+            "data": { "token": insertId, "uid": insertId },
+            mes: "succcess"
         }
     } else {
-        ctx.body = { code: -2, mes: "登录失败，密码或账号错误" }
+        ctx.body = { code: -1, mes: errText }
     }
 })
 
 
+//判断图形验证码是否正确
+router.get('/verification/sms/get', async function (ctx, next) {
+    let errtxt = ""
+    let { mobile, picCode } = ctx?.request?.query;
+    if (picCode !== ctx.session.imgCode) {
+        errtxt = "图形验证码错误"
+    }
+    //发送验证码
+    if (!errtxt) {
+        ctx.session.imgCodeMobile = mobile;
+        ctx.session.RegisterSMSVerificationCode = '1234'
+    }
+    if (!errtxt) {
+        ctx.body = { "code": 0, "msg": "success" };
+    } else {
+        ctx.body = { "code": -1, "msg": errtxt };
+    }
 
-
-
-
-//发送邮件
-router.all('/api/email', async function (ctx, next) {
-    var mail = {
-        // 发件人
-        from: '美国代购<maker_wx1018@163.com>',
-        // 主题
-        subject: '接受凭证',//邮箱主题
-        // 收件人
-        to: 'maker.wx@gmail.com',//前台传过来的邮箱
-        // 邮件内容，HTML格式
-        text: '用' + 32323 + '作为你的验证码'//发送验证码
-    };
-    await email(mail);
-    ctx.body = { code: 0, mes: "成功" }
 })
+
+//获取图形验证码
+router.get('/verification/pic/get', async function (ctx, next) {
+    let svg = svgCaptcha.create({
+        height: 40,
+        width: 160,
+        size: 4,
+        ignoreChars: '0o1i', // 验证码字符中排除 0o1i
+        color: 'blue',
+        background: '#ccc',
+        noise: 2,
+    });
+    ctx.session.imgCode = svg.text;
+    console.log(svg.text)
+    // 指定返回的类型
+    ctx.response.type = 'image/svg+xml';
+    ctx.body = svg.data;
+
+})
+
 
 
 //注册
-router.post('/api/register', async function (ctx, next) {
+router.post('/register', async function (ctx, next) {
+    let errText = '';
+    let insertId = ''
     const { mobile, code, nick, pwd, autoLogin } = ctx?.request?.body;
-    let sqlstr = `INSERT INTO user ( username, password,  register_time, user_level_id,  mobile, register_ip)VALUES(
-        "${nick}",
-        "${pwd}",
-        ${Number(new Date().getTime() / 1000).toFixed(0)},
-        1,
-       "${mobile}",
-        "${ctx.ip}");
-    `
-    let sqlRes = await sql.promiseCall(sqlstr);
-    if (sqlRes.results.insertId) {
-        ctx.body = { "code": 0, "data": { "token": sqlRes.results.insertId, "uid": sqlRes.results.insertId }, "msg": "success" }
-    } else {
-        ctx.body = { "code": -1, "msg": "注册失败" }
+
+    //判断验证码
+    if (ctx.session.RegisterSMSVerificationCode !== code || ctx.session.imgCodeMobile !== mobile) {
+        errText = "短信验证码错误"
     }
+
+    //判断电话是否被注册
+    if (!errText) {
+        let count = await sql.promiseCall(`select count(*) as res from user where mobile = '${mobile}'`);
+        if (count.error || count.results[0].res > 0) {
+            errText = "手机号已被注册！"
+        }
+    }
+    if (!errText) {
+        let sqlstr = `INSERT INTO user ( username, password,  register_time, user_level_id,  mobile, register_ip)VALUES(
+            "${nick}",
+            "${pwd}",
+            ${Number(new Date().getTime() / 1000).toFixed(0)},
+            1,
+           "${mobile}",
+            "${ctx.ip}");
+        `
+        let sqlRes = await sql.promiseCall(sqlstr);
+        if (!sqlRes.error && sqlRes.results.insertId) {
+            insertId = sqlRes.results.insertId
+        } else {
+            errText = "注册失败"
+        }
+
+    }
+    if (!errText) {
+        ctx.session.userId = insertId;
+        ctx.body = { "code": 0, "data": { "token": insertId, "uid": insertId }, "msg": "success" }
+    } else {
+        ctx.body = { "code": -1, "msg": errText }
+    }
+
 })
-
-
-
 
 
 
@@ -95,7 +153,7 @@ const adminIndex = (app) => {
             needLand = false;
         }
         if (needLand) {
-            ctx.body = { 'code': -1, msg: "请登录" }
+            ctx.body = { 'code': -999, msg: "请登录" }
         } else {
             await next();
         }
