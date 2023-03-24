@@ -25,7 +25,7 @@ SET NAMES utf8mb4;
 
 DROP TABLE IF EXISTS `nideshop_user`;
 
-CREATE TABLE `nideshop_user` (
+CREATE TABLE `user` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(60) NOT NULL DEFAULT '',
   `password` varchar(32) NOT NULL DEFAULT '',
@@ -34,15 +34,53 @@ CREATE TABLE `nideshop_user` (
   `register_time` int(11) unsigned NOT NULL DEFAULT '0',
   `last_login_time` int(11) unsigned NOT NULL DEFAULT '0',
   `last_login_ip` varchar(255) NOT NULL DEFAULT '',
-  `user_level_id` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `nickname` varchar(60) NOT NULL,
+  `nickname` varchar(60) NOT NULL DEFAULT '',
   `mobile` varchar(20) NOT NULL,
   `register_ip` varchar(255) NOT NULL DEFAULT '',
   `avatar` varchar(255) NOT NULL DEFAULT '',
   `weixin_openid` varchar(50) NOT NULL DEFAULT '',
+  `province` varchar(50) NOT NULL DEFAULT '',
+  `city` varchar(50) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_name` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE `level` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `dateAdd` int(11) NOT NULL DEFAULT '0',
+  `dateUpdate` int(11) NOT NULL DEFAULT '0',
+  `defValidityUnit` int(11) NOT NULL DEFAULT '0',
+  `level` int(11) NOT NULL DEFAULT '1',
+  `paixu` int(11) NOT NULL DEFAULT '0',
+  `rebate` int(11) NOT NULL DEFAULT '0',
+  `sendPerMonthScore` int(11) NOT NULL DEFAULT '0',
+  `status` int(11) NOT NULL DEFAULT '0',
+  `upgradePayNumber` int(11) NOT NULL DEFAULT '0',
+  `upgradeScore` int(11) NOT NULL DEFAULT '0',
+  `upgradeSendScore` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `amount` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `balance` int(11) NOT NULL DEFAULT '0',
+  `freeze` int(11) NOT NULL DEFAULT '0',
+  `fxCommisionPaying` int(11) NOT NULL DEFAULT '0',
+  `growth` int(11) NOT NULL DEFAULT '0',
+  `score` int(11) NOT NULL DEFAULT '0',
+  `scoreLastRound` int(11) NOT NULL DEFAULT '0',
+  `totalPayAmount` int(11) NOT NULL DEFAULT '0',
+  `totalPayNumber` int(11) NOT NULL DEFAULT '0',
+  `totalScore` int(11) NOT NULL DEFAULT '0',
+  `totalWithdraw` int(11) NOT NULL DEFAULT '0',
+  `totleConsumed` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
 
 LOCK TABLES `nideshop_user` WRITE;
 /*!40000 ALTER TABLE `nideshop_user` DISABLE KEYS */;

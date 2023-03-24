@@ -11,6 +11,7 @@ const users = require('./routes/users')
 const order = require('./routes/order')
 const discounts = require('./routes/discounts')
 const comm = require('./routes/comm')
+const dfs = require('./routes/dfs')
 // error handler
 onerror(app)
 
@@ -52,8 +53,7 @@ app.use(async (ctx, next) => {
 // routes
 //app登录限制
 adminIndex(app);
-
-
+app.use(dfs.routes(), dfs.allowedMethods())
 app.use(comm.routes(), comm.allowedMethods())
 app.use(discounts.routes(), discounts.allowedMethods())
 app.use(order.routes(), order.allowedMethods())

@@ -2,8 +2,6 @@ const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
 const fs = require('fs')
 const path = require('path')
-var multiparty = require('multiparty');
-var formidable = require('formidable');
 const email = require('../tool/nodemailer')
 router.prefix('/api')
 
@@ -132,23 +130,6 @@ const getPostData = (ctx) => {
     }
   })
 }
-
-router.post('/dfs/upload/file', async function (ctx, next) {
-  let form = new formidable.IncomingForm()
-  form.parse(ctx.req, function (err, fields, files) {
-    fs.copyFileSync(files.upfile.filepath, path.join(__dirname, '../public/upload', '111.png'))
-  })
-  ctx.body = { "code": 0, "data": { "id": "3090661", "msg": "SUCCESS", "name": "cuser/1605/2023/03/24/7687072f-093f-4f2d-8620-a7703fcfc931.png", "originalName": "20da2bc9-bb53-4183-a553-d1b4805f4ed6.png", "size": "2318", "type": ".png", "url": "https://dcdn.it120.cc/cuser/1605/2023/03/24/7687072f-093f-4f2d-8620-a7703fcfc931.png" }, "msg": "success" }
-})
-
-
-
-
-
-
-
-
-
 
 
 module.exports = router
