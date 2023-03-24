@@ -56,7 +56,35 @@ router.get('/detail', async function  (ctx, next) {
 })
 
 router.get('/amount', function (ctx, next) {
-  ctx.body = {"code":0,"data":{"balance":940.99,"freeze":0.00,"fxCommisionPaying":0.00,"growth":0.00,"score":13997,"scoreLastRound":0,"totalPayAmount":59.01,"totalPayNumber":2,"totalScore":14997,"totalWithdraw":0.00,"totleConsumed":0.00},"msg":"success"}
+  ctx.body = {"code":0,"data":{"balance":1111140.99,"freeze":0.00,"fxCommisionPaying":0.00,"growth":0.00,"score":13997,"scoreLastRound":0,"totalPayAmount":59.01,"totalPayNumber":2,"totalScore":14997,"totalWithdraw":0.00,"totleConsumed":0.00},"msg":"success"}
 })
+
+
+router.post('/cashLog/v2', function (ctx, next) {
+  ctx.body = {"code":0,"data":{"result":[{"amount":1.00,"balance":11111939.99,"behavior":1,"dateAdd":"2023-03-17 05:26:24","freeze":0.00,"id":2231794,"orderId":1784887,"orderId2":1784887,"shopId":0,"type":2,"typeStr":"支付订单","uid":7448958,"userId":1605},{"amount":0.01,"balance":940.99,"behavior":1,"dateAdd":"2023-03-17 02:02:32","freeze":0.00,"id":2231715,"orderId":1784876,"orderId2":1784876,"shopId":0,"type":2,"typeStr":"支付订单","uid":7448958,"userId":1605},{"amount":59.00,"balance":941.00,"behavior":1,"dateAdd":"2023-03-17 01:57:47","freeze":0.00,"id":2231714,"orderId":1784875,"orderId2":1784875,"shopId":0,"type":2,"typeStr":"支付订单","uid":7448958,"userId":1605},{"amount":1000.00,"balance":1000.00,"behavior":0,"dateAdd":"2023-03-17 01:57:23","freeze":0.00,"id":2231713,"type":140,"typeStr":"积分兑换成金额","uid":7448958,"userId":1605}],"totalPage":1,"totalRow":4},"msg":"success"}
+})
+
+router.get('/modify', function (ctx, next) {
+  ctx.body  ={"code":0,"msg":"success"}
+})
+
+router.get('/loginout', function (ctx, next) {
+  ctx.body  ={"code":0,"msg":"success"}
+})
+
+
+
+router.get('/shipping-address/default/v2', function (ctx, next) {
+  ctx.body =  {"code":0,"data":{"extJson":{},"info":{"address":"Thuu","areaStr":"东城区","cityId":"110100","cityStr":"-","dateAdd":"2023-03-17 01:55:20","dateUpdate":"2023-03-24 20:33:04","districtId":"110101","id":560611,"isDefault":false,"linkMan":"Ghhj","mobile":"15557155555","provinceId":"110000","provinceStr":"北京市","status":0,"statusStr":"正常","uid":7448958,"userId":1605}},"msg":"success"}
+})
+
+
+
+
+
+
+
+
+
 
 module.exports = router

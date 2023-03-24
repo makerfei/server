@@ -1,6 +1,7 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
 router.prefix('/api')
+const svgCaptcha = require('svg-captcha')
 router.get('/banner/list', async function (ctx, next) {
     ctx.body = { "code": 0, "data": [{ "businessId": 0, "dateAdd": "2022-05-05 11:26:09", "id": 222083, "linkType": 0, "linkUrl": "https://gitee.com/joeshu/v-shop", "paixu": 0, "picUrl": "https://dcdn.it120.cc/2022/05/05/ac956ae3-151f-418e-b0e9-fadd76a9ea6d.jpeg", "remark": "跳转gitee v-shop", "shopId": 0, "status": 0, "statusStr": "显示", "title": "首页Banner4", "type": "indexBanner", "userId": 1605 }, { "businessId": 0, "dateAdd": "2022-02-02 16:04:11", "dateUpdate": "2022-02-02 16:19:17", "id": 204167, "linkType": 0, "linkUrl": "https://github.com/JoeshuTT/v-shop", "paixu": 0, "picUrl": "https://dcdn.it120.cc/2022/02/02/d0442c95-cd44-435a-888d-2539c5399334.png", "remark": "跳转github v-shop", "shopId": 0, "status": 0, "statusStr": "显示", "title": "首页banner3", "type": "indexBanner", "userId": 1605 }, { "businessId": 0, "dateAdd": "2017-12-04 10:35:09", "dateUpdate": "2022-02-02 16:19:07", "id": 2772, "linkType": 0, "linkUrl": "", "paixu": 2, "picUrl": "https://cdn.it120.cc/apifactory/2019/06/18/4c458676-85bb-4271-91a6-79ed9fc47545.jpg", "remark": "", "shopId": 0, "status": 0, "statusStr": "显示", "title": "首页banner2", "type": "indexBanner", "userId": 1605 }, { "businessId": 0, "dateAdd": "2017-12-04 10:34:35", "dateUpdate": "2022-02-02 16:19:13", "id": 2771, "linkType": 0, "linkUrl": "", "paixu": 2, "picUrl": "https://cdn.it120.cc/apifactory/2019/06/18/06b337d7-92a1-498b-8142-5c5951e8fb97.jpg", "remark": "", "shopId": 0, "status": 0, "statusStr": "显示", "title": "首页banner1", "type": "indexBanner", "userId": 1605 }], "msg": "success" }
 })
@@ -33,7 +34,78 @@ router.get('/shop/goods/category/all', async function  (ctx, next) {
   })
 
 
+
+
+
+  router.get('/score/deduction/rules', async function  (ctx, next) {
+    ctx.body ={"code":0,"data":[{"loop":true,"money":100.00,"score":100,"type":2}],"msg":"success"}
+  })
+
+  router.post('/score/exchange/cash', async function  (ctx, next) {
+    ctx.body ={"code":0,"data":1000.00,"msg":"success"}
+  })
+
+  router.post('/user/shipping-address/list/v2', async function  (ctx, next) {
+    ctx.body ={"code":0,"data":{"result":[{"address":"Thuu","areaStr":"东城区","cityId":"110100","cityStr":"-","dateAdd":"2023-03-17 01:55:20","dateUpdate":"2023-03-17 01:55:44","districtId":"110101","id":560611,"isDefault":false,"linkMan":"Ghhj","mobile":"15557155555","provinceId":"110000","provinceStr":"北京市","status":0,"statusStr":"正常","uid":7448958,"userId":1605}],"totalPage":1,"totalRow":1},"msg":"success"}
+  })
+ 
   
+  router.get('/user/shipping-address/detail/v2', async function  (ctx, next) {
+    ctx.body ={"code":0,"data":{"extJson":{},"info":{"address":"Thuu","areaStr":"东城区","cityId":"110100","cityStr":"-","dateAdd":"2023-03-17 01:55:20","dateUpdate":"2023-03-17 01:55:44","districtId":"110101","id":560611,"isDefault":false,"linkMan":"Ghhj","mobile":"15557155555","provinceId":"110000","provinceStr":"北京市","status":0,"statusStr":"正常","uid":7448958,"userId":1605}},"msg":"success"}
+  })
+
+  router.post('/user/shipping-address/update', async function  (ctx, next) {
+    ctx.body ={"code":0,"msg":"success"}
+  })
+
+  router.post('/user/shipping-address/add', async function  (ctx, next) {
+    ctx.body ={"code":0,"msg":"success"}
+  })
+  router.post('/user/shipping-address/delete', async function  (ctx, next) {
+    ctx.body ={"code":0,"msg":"success"}
+  })
+
+
+  router.post('/shopping-cart/modifyNumber', async function  (ctx, next) {
+    ctx.body ={"code":0,"data":{"goodsStatus":[{"id":153331,"sellEnd":false,"sellStart":true,"status":0,"statusStr":"上架","stores":971},{"id":144614,"sellEnd":false,"sellStart":true,"status":0,"statusStr":"上架","stores":79}],"items":[{"categoryId":37963,"goodsId":153331,"key":"37f5e16926d1eefa448f22b962edcd24","logisticsId":4727,"minBuyNumber":1,"name":"小米手环4[砍价]","number":2,"overseas":false,"pic":"https://cdn.it120.cc/apifactory/2019/07/18/85d3a148-f88f-4fe1-8c6c-9d16638dd9ef.jpg","price":169.00,"score":0,"selected":true,"shopId":0,"status":0,"statusStr":"上架","stores":971,"type":0,"weight":0.00},{"categoryId":37962,"goodsId":144614,"key":"7b6d7d44d73bace9079e125a6a08e2ec","logisticsId":4727,"minBuyNumber":1,"name":"Redmi K20[2种规格]","number":1,"overseas":false,"pic":"https://cdn.it120.cc/apifactory/2019/06/20/b30cd900-8034-4a0d-88af-62f6cf042577.jpg","price":2099.00,"score":0,"selected":true,"shopId":0,"sku":[{"optionId":13090,"optionName":"版本","optionValueId":49809,"optionValueName":"6GB+128GB"},{"optionId":13093,"optionName":"颜色","optionValueId":52622,"optionValueName":"冰川蓝"}],"status":0,"statusStr":"上架","stores":95,"type":0,"weight":0.00}],"number":3,"price":2437.00,"score":0,"shopList":[{"id":0,"name":"其他","serviceDistance":99999999}]},"msg":"success"}
+  })
+
+
+  router.post('/shopping-cart/empty', async function  (ctx, next) {
+    ctx.body ={"code":0,"msg":"success"}
+  })
+
+  router.post('/shopping-cart/add', async function  (ctx, next) {
+    ctx.body ={"code":0,"msg":"success"}
+  })
+
+  router.post('/score/logs', async function  (ctx, next) {
+    ctx.body ={"code":0,"data":{"result":[{"behavior":0,"behaviorStr":"收入","dateAdd":"2023-03-24 20:43:20","remark":"购买商品: 虚拟商品（购买时无需填写收货地址，无需物流） 赠送","score":1000,"scoreLeft":14497,"type":11,"typeStr":"购买商品"},{"behavior":1,"behaviorStr":"支出","dateAdd":"2023-03-24 20:26:00","remark":"1000积分兑换1000.00金额","score":-1000,"scoreLeft":13497,"type":16,"typeStr":"兑换成金额"},{"behavior":0,"behaviorStr":"收入","dateAdd":"2023-03-17 05:26:24","remark":"购买商品: 实物商品（购买时需填写收货地址，支持售后） 赠送","score":500,"scoreLeft":14497,"type":11,"typeStr":"购买商品"},{"behavior":0,"behaviorStr":"收入","dateAdd":"2023-03-17 02:02:40","remark":"黄金会员每月赠送","score":2000,"scoreLeft":13997,"type":17,"typeStr":"会员赠送"},{"behavior":0,"behaviorStr":"收入","dateAdd":"2023-03-17 02:02:40","remark":"升级到黄金会员","score":4999,"scoreLeft":11997,"type":17,"typeStr":"会员赠送"},{"behavior":0,"behaviorStr":"收入","dateAdd":"2023-03-17 02:02:32","remark":"购买商品: 虚拟商品（购买时无需填写收货地址，无需物流） 赠送","score":1000,"scoreLeft":6998,"type":11,"typeStr":"购买商品"},{"behavior":1,"behaviorStr":"支出","dateAdd":"2023-03-17 01:57:23","remark":"1000积分兑换1000.00金额","score":-1000,"scoreLeft":5998,"type":16,"typeStr":"兑换成金额"},{"behavior":0,"behaviorStr":"收入","dateAdd":"2023-03-17 01:52:50","remark":"白银会员每月赠送","score":1000,"scoreLeft":6998,"type":17,"typeStr":"会员赠送"},{"behavior":0,"behaviorStr":"收入","dateAdd":"2023-03-17 01:52:50","remark":"升级到白银会员","score":4999,"scoreLeft":5998,"type":17,"typeStr":"会员赠送"},{"behavior":0,"behaviorStr":"收入","dateAdd":"2023-03-17 01:52:48","remark":"注册送积分","score":999,"scoreLeft":999,"type":0,"typeStr":"注册"}],"totalPage":1,"totalRow":10},"msg":"success"}
+  })
+
+
+  
+
+  
+  
+
+  router.get('/verification/pic/get', async function  (ctx, next) {
+
+    const img = svgCaptcha.create({ 
+      size: 6, // 验证码长度
+      ignoreChars: '0o1i', // 验证码字符中排除 0o1i
+      color: true, // 验证码是否有彩色
+      noise: 1, //干扰线
+      background: '#666' // 背景颜色
+    })
+    console.log(img.text);
+    ctx.send(img);
+
+
+   
+  })
+
+
 
 
 
