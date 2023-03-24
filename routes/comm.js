@@ -90,8 +90,6 @@ router.post('/score/logs', async function (ctx, next) {
 
 
 router.get('/verification/pic/get', async function (ctx, next) {
-
-
   let svg = svgCaptcha.create({
     height: 40,
     width: 160,
@@ -102,15 +100,19 @@ router.get('/verification/pic/get', async function (ctx, next) {
     noise: 2,
   });
   ctx.session.imgCode = svg.text;
-
   // 指定返回的类型
   ctx.response.type = 'image/svg+xml';
   ctx.body = svg.data;
 
+})
 
-
+router.get('/verification/sms/get', async function (ctx, next) {
+  ctx.body = { "code": 0, "msg": "success" };
 
 })
+
+
+
 
 
 
