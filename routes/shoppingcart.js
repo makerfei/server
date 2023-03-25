@@ -154,7 +154,7 @@ router.post('/add', async function (ctx, next) {
     if (!errText) {
         let cartCountSql = await sql.promiseCall(`select count(*) as count from shoppingcart where userId = ${userId} `)
         if (!cartCountSql.error) {
-            if (cartCountSql.results.length > 0 && cartCountSql.results[0].count > 5) {
+            if (cartCountSql.results.length > 0 && cartCountSql.results[0].count >=5) {
                 errText = "购物车最多添加五个商品";
             }
         } else {
