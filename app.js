@@ -12,6 +12,10 @@ const order = require('./routes/order')
 const discounts = require('./routes/discounts')
 const comm = require('./routes/comm')
 const dfs = require('./routes/dfs')
+const shop = require('./routes/shop')
+const shoppingCart = require('./routes/shoppingcart')
+
+
 // error handler
 onerror(app)
 
@@ -53,6 +57,10 @@ app.use(async (ctx, next) => {
 // routes
 //app登录限制
 adminIndex(app);
+
+
+app.use(shoppingCart.routes(), shoppingCart.allowedMethods())
+app.use(shop.routes(), shop.allowedMethods())
 app.use(dfs.routes(), dfs.allowedMethods())
 app.use(comm.routes(), comm.allowedMethods())
 app.use(discounts.routes(), discounts.allowedMethods())

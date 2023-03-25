@@ -1,7 +1,7 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
 router.prefix('/api/user')
-
+//用户详情
 router.get('/detail', async function (ctx, next) {
   let errortxt = ""
   let resData = {
@@ -15,30 +15,30 @@ router.get('/detail', async function (ctx, next) {
     errortxt = res.error.message
   }
 
-  if (!errortxt ) {
+  if (!errortxt) {
     let levelsql = await sql.promiseCall(`select * from level where user_id = '${ctx.session.userId}'`);
     if (!levelsql.error && levelsql.results.length > 0) {
       resData.userLevel = levelsql.results[0]
-    }else{
+    } else {
       errortxt = levelsql.error.message
     }
   }
   if (!errortxt) {
     let level = resData.userLevel.level;
     let name = "";
-     switch (level) {
-      case 1:name="黄铜"; break;
-      case 2:name="白银"; break;
-      case 3:name="黄金"; break;
-      case 4:name="钻石"; break;
-      case 5:name="大师"; break;
-      case 6:name="王者"; break;
+    switch (level) {
+      case 1: name = "黄铜"; break;
+      case 2: name = "白银"; break;
+      case 3: name = "黄金"; break;
+      case 4: name = "钻石"; break;
+      case 5: name = "大师"; break;
+      case 6: name = "王者"; break;
       default:
         break;
-     }
+    }
 
-     resData.userLevel.name = name;
-   
+    resData.userLevel.name = name;
+
 
     ctx.body = {
       "code": 0, "data": {
@@ -46,46 +46,46 @@ router.get('/detail', async function (ctx, next) {
 
 
 
-      //  "base": {
-        
-          // "avatarUrl": resData.avatar,
-          // "birthdayProcessSuccessYear": 0,
-          // "cardNumber": "230317015216050001",
-          // "city": "北京市",
-          // "dateAdd": "2023-03-17 01:52:48",
-          // "dateLogin": "2023-03-17 04:43:54",
-          // "getLevelDate": "2023-03-17 01:52:49",
-          // "id": resData.id,
-          // "ipAdd": "171.42.100.96",
-          // "ipLogin": "171.42.100.96",
-          // "isFaceCheck": false,
-          // "isIdcardCheck": false,
-          // "isManager": false,
-          // "isSeller": false,
-          // "isSendRegisterCoupons": true,
-          // "isShopManager": false,
-          // "isTeamLeader": false,
-          // "isTeamMember": false,
-          // "isUserAttendant": false,
-          // "lastOrderDate": "2023-03-17 02:02:33",
-          // "levelId": 4199,
-          // "levelRenew": false,
-          // "mobile": "15557131909",
-          // "mobileVisInvister": true,
-          // "nick": resData.username,
-          // "province": "北京市",
-          // "pwd": "yes",
-          // "referrerType": 0,
-          // "secondsAfterRegister": 10718,
-          // "source": 1,
-          // "sourceStr": "手机注册",
-          // "status": 0,
-          // "statusStr": "默认",
-          // "taskUserLevelSendMonth": 202303,
-          // "taskUserLevelSendPerMonth": false,
-          // "taskUserLevelUpgrade": false,
-          // "userId": resData.id       
-       // },
+        //  "base": {
+
+        // "avatarUrl": resData.avatar,
+        // "birthdayProcessSuccessYear": 0,
+        // "cardNumber": "230317015216050001",
+        // "city": "北京市",
+        // "dateAdd": "2023-03-17 01:52:48",
+        // "dateLogin": "2023-03-17 04:43:54",
+        // "getLevelDate": "2023-03-17 01:52:49",
+        // "id": resData.id,
+        // "ipAdd": "171.42.100.96",
+        // "ipLogin": "171.42.100.96",
+        // "isFaceCheck": false,
+        // "isIdcardCheck": false,
+        // "isManager": false,
+        // "isSeller": false,
+        // "isSendRegisterCoupons": true,
+        // "isShopManager": false,
+        // "isTeamLeader": false,
+        // "isTeamMember": false,
+        // "isUserAttendant": false,
+        // "lastOrderDate": "2023-03-17 02:02:33",
+        // "levelId": 4199,
+        // "levelRenew": false,
+        // "mobile": "15557131909",
+        // "mobileVisInvister": true,
+        // "nick": resData.username,
+        // "province": "北京市",
+        // "pwd": "yes",
+        // "referrerType": 0,
+        // "secondsAfterRegister": 10718,
+        // "source": 1,
+        // "sourceStr": "手机注册",
+        // "status": 0,
+        // "statusStr": "默认",
+        // "taskUserLevelSendMonth": 202303,
+        // "taskUserLevelSendPerMonth": false,
+        // "taskUserLevelUpgrade": false,
+        // "userId": resData.id       
+        // },
         // "userLevel": {
         //   "id": 4199,
         //   // "userId": 1605,
@@ -111,7 +111,7 @@ router.get('/detail', async function (ctx, next) {
 
 })
 
-
+//更改用户信息
 router.get('/modify', async function (ctx, next) {
   let { nick, avatarUrl, province, city } = ctx?.request?.query;
   let res = await sql.promiseCall(`update user set avatar = '${avatarUrl}',username = '${nick}',province = '${province}', city = '${city}' where id =${ctx.session.userId}`);
@@ -122,26 +122,160 @@ router.get('/modify', async function (ctx, next) {
   }
 })
 
-
-
-
-
-
-router.get('/amount',async function (ctx, next) {
+//用户金额信息
+router.get('/amount', async function (ctx, next) {
   let errortxt = ""
-  let resData ={};
+  let resData = {};
   let amountsql = await sql.promiseCall(`select * from amount where user_id = '${ctx.session.userId}'`);
   if (!amountsql.error && amountsql.results.length > 0) {
     resData = amountsql.results[0]
-  }else{
+  } else {
     errortxt = amountsql.error.message
   }
   if (!errortxt) {
-    ctx.body = { "code": 0, "msg": "success",data:resData }
+    ctx.body = { "code": 0, "msg": "success", data: resData }
   } else {
     ctx.body = { "code": -1, "msg": errortxt }
   }
 })
+//用户登录出
+router.get('/loginout', function (ctx, next) {
+  ctx.session.userId = ''
+  ctx.body = { "code": 0, "msg": "success" }
+})
+
+
+
+
+//地址信息列表
+router.post('/shipping-address/list/v2', async function (ctx, next) {
+  let resData = [];
+  let errortxt = ""
+  let addressSql = await sql.promiseCall(`select * from address where userId = '${ctx.session.userId}'`);
+  if (!addressSql.error > 0) {
+    resData = addressSql.results
+  } else {
+    errortxt = addressSql.error.message
+  }
+  if (!errortxt) {
+    ctx.body = { "code": 0, "msg": "success", data: { result: resData } }
+  } else {
+    ctx.body = { "code": -1, "msg": errortxt }
+  }
+
+})
+//获取默认地址
+router.get('/shipping-address/default/v2', async function (ctx, next) {
+  let resData = [];
+  let errortxt = ""
+  let addressSql = await sql.promiseCall(`select * from address where isDefault=1 and userId = '${ctx.session.userId}'`);
+  if (!addressSql.error > 0) {
+    resData = addressSql.results
+  } else {
+    errortxt = addressSql.error.message
+  }
+  if (!errortxt) {
+    ctx.body = { "code": 0, "msg": "success", data: { info: resData[0] || {} } }
+  } else {
+    ctx.body = { "code": -1, "msg": errortxt }
+  }
+})
+//获取地址详情
+router.get('/shipping-address/detail/v2', async function (ctx, next) {
+  let { id } = ctx.request.query;
+  let resData = [];
+  let errortxt = ""
+  let addressSql = await sql.promiseCall(`select * from address where  id = ${id} and userId = '${ctx.session.userId}'`);
+  if (!addressSql.error > 0) {
+    resData = addressSql.results
+  } else {
+    errortxt = addressSql.error.message
+  }
+  if (!errortxt) {
+    ctx.body = {
+      "code": 0, "msg": "success", data: {
+        info: {
+          ...resData[0],
+          isDefault: resData?.[0]?.isDefault ? true : false
+        }
+      }
+    }
+  } else {
+    ctx.body = { "code": -1, "msg": errortxt }
+  }
+})
+
+
+
+
+
+//新增加地址
+router.post('/shipping-address/add', async function (ctx, next) {
+  let { address, linkMan, mobile, isDefault, provinceId, cityId, districtId, areaStr, id } = ctx.request.body;
+  let areaStrList = areaStr.split('/');
+  let provinceStr = areaStrList[0] || ''
+  let cityStr = areaStrList[1] || ''
+  let areaStrT = areaStrList[2] || ''
+
+  let addressSql = await sql.promiseCall(` INSERT INTO address (address, areaStr, cityStr, linkMan, mobile, provinceId, provinceStr, districtId, userId, isDefault, cityId)
+  VALUES
+    ( '${address}', '${areaStrT}', '${cityStr}', '${linkMan}', '${mobile}', '${provinceId}', '${provinceStr}', '${districtId}', ${ctx.session.userId}, ${isDefault ? 1 : 0}, ${cityId});`);
+  if (!addressSql.error) {
+    if (isDefault) {
+      await sql.promiseCall(`update address set isDefault = '${0}' where isDefault = 1 and id != ${addressSql.results.insertId} and userId = '${ctx.session.userId}'`)
+    }
+    ctx.body = { "code": 0, "msg": "success" }
+  } else {
+    ctx.body = { "code": -1, "msg": !addressSql.error.message }
+  }
+})
+//更新地址
+router.post('/shipping-address/update', async function (ctx, next) {
+  let { address, linkMan, mobile, isDefault, provinceId, cityId, districtId, areaStr, id } = ctx.request.body;
+  let areaStrList = areaStr.split('/');
+  let provinceStr = areaStrList[0] || ''
+  let cityStr = areaStrList[1] || ''
+  let areaStrT = areaStrList[2] || ''
+  let addressSql = await sql.promiseCall(`update address set 
+  address = '${address}',
+  linkMan = '${linkMan}',
+  mobile = '${mobile}',
+  isDefault = '${isDefault ? 1 : 0}',
+  provinceId = '${provinceId}',
+  cityId = '${cityId}',
+  districtId = '${districtId}',
+  provinceStr = '${provinceStr}',
+  cityStr = '${cityStr}',
+  areaStr = '${areaStrT}'
+   where id =${id}`);
+  if (!addressSql.error) {
+    if (isDefault) {
+      await sql.promiseCall(`update address set isDefault = '${0}' where isDefault = 1 and id != ${id} and userId = '${ctx.session.userId}'`)
+    }
+    ctx.body = { "code": 0, "msg": "success" }
+  } else {
+    ctx.body = { "code": -1, "msg": addressSql.error.message }
+  }
+
+})
+
+//删除地址
+router.post('/shipping-address/delete', async function (ctx, next) {
+  let { id } = ctx.request.body;
+  let addressSqlDel = await sql.promiseCall(`DELETE from address where id = ${id} and userId = '${ctx.session.userId}'`)
+  if (!addressSqlDel.error) {
+    ctx.body = { "code": 0, "msg": "success" }
+  } else {
+    ctx.body = { "code": -1, "msg": addressSqlDel.error.message }
+  }
+
+})
+
+
+
+
+
+
 
 
 router.post('/cashLog/v2', function (ctx, next) {
@@ -150,15 +284,10 @@ router.post('/cashLog/v2', function (ctx, next) {
 
 
 
-router.get('/loginout', function (ctx, next) {
-  ctx.body = { "code": 0, "msg": "success" }
-})
 
 
 
-router.get('/shipping-address/default/v2', function (ctx, next) {
-  ctx.body = { "code": 0, "data": { "extJson": {}, "info": { "address": "Thuu", "areaStr": "东城区", "cityId": "110100", "cityStr": "-", "dateAdd": "2023-03-17 01:55:20", "dateUpdate": "2023-03-24 20:33:04", "districtId": "110101", "id": 560611, "isDefault": false, "linkMan": "Ghhj", "mobile": "15557155555", "provinceId": "110000", "provinceStr": "北京市", "status": 0, "statusStr": "正常", "uid": 7448958, "userId": 1605 } }, "msg": "success" }
-})
+
 
 
 

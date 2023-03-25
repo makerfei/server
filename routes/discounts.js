@@ -16,7 +16,7 @@ router.get('/coupons', async function  (ctx, next) {
   })
 
   router.post('/fetch', async function  (ctx, next) {
-    ctx.body = {"code":0,"msg":"成功"}
+    ctx.body = {"code":0,"msg":"success"}
 
   })
 

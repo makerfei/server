@@ -1,30 +1,117 @@
-# ************************************************************
-# Sequel Ace SQL dump
-# 版本号： 20046
-#
-# https://sequel-ace.com/
-# https://github.com/Sequel-Ace/Sequel-Ace
-#
-# 主机: mggg.site (MySQL 5.7.31-log)
-# 数据库: nideshop
-# 生成时间: 2023-03-14 14:06:54 +0000
-# ************************************************************
+-- Create syntax for TABLE 'amount'
+CREATE TABLE `amount` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `balance` int(11) NOT NULL DEFAULT '0',
+  `freeze` int(11) NOT NULL DEFAULT '0',
+  `fxCommisionPaying` int(11) NOT NULL DEFAULT '0',
+  `growth` int(11) NOT NULL DEFAULT '0',
+  `score` int(11) NOT NULL DEFAULT '0',
+  `scoreLastRound` int(11) NOT NULL DEFAULT '0',
+  `totalPayAmount` int(11) NOT NULL DEFAULT '0',
+  `totalPayNumber` int(11) NOT NULL DEFAULT '0',
+  `totalScore` int(11) NOT NULL DEFAULT '0',
+  `totalWithdraw` int(11) NOT NULL DEFAULT '0',
+  `totleConsumed` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
 
+-- Create syntax for TABLE 'banner'
+CREATE TABLE `banner` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `linkUrl` varchar(255) NOT NULL DEFAULT '',
+  `paixu` int(11) NOT NULL DEFAULT '0',
+  `picUrl` varchar(255) NOT NULL DEFAULT '',
+  `remark` varchar(255) NOT NULL DEFAULT '',
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `type` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-SET NAMES utf8mb4;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE='NO_AUTO_VALUE_ON_ZERO', SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+-- Create syntax for TABLE 'category'
+CREATE TABLE `category` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `isUse` tinyint(1) NOT NULL DEFAULT '1',
+  `name` varchar(255) NOT NULL DEFAULT '',
+  `paixu` int(11) NOT NULL DEFAULT '0',
+  `pid` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
 
+-- Create syntax for TABLE 'childsCurGoods'
+CREATE TABLE `childscurgoods` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `propertyId` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
 
-# 转储表 nideshop_user
-# ------------------------------------------------------------
+-- Create syntax for TABLE 'goods'
+CREATE TABLE `goods` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `categoryId` int(11) NOT NULL DEFAULT '0',
+  `pic` varchar(255) NOT NULL DEFAULT '',
+  `name` varchar(255) NOT NULL DEFAULT '',
+  `originalPrice` int(11) NOT NULL DEFAULT '0',
+  `minPrice` int(11) NOT NULL DEFAULT '0',
+  `recommendStatus` tinyint(1) NOT NULL DEFAULT '0',
+  `content` longtext CHARACTER SET utf8 NOT NULL,
+  `characteristic` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `stores` int(11) NOT NULL DEFAULT '0',
+  `feeType` int(11) NOT NULL DEFAULT '0',
+  `isFree` tinyint(1) NOT NULL DEFAULT '0',
+  `logisticsId` int(11) NOT NULL DEFAULT '0',
+  `afterSale` varchar(50) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=latin1;
 
-DROP TABLE IF EXISTS `nideshop_user`;
+-- Create syntax for TABLE 'level'
+CREATE TABLE `level` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `dateAdd` int(11) NOT NULL DEFAULT '0',
+  `dateUpdate` int(11) NOT NULL DEFAULT '0',
+  `defValidityUnit` int(11) NOT NULL DEFAULT '0',
+  `level` int(11) NOT NULL DEFAULT '1',
+  `paixu` int(11) NOT NULL DEFAULT '0',
+  `rebate` int(11) NOT NULL DEFAULT '0',
+  `sendPerMonthScore` int(11) NOT NULL DEFAULT '0',
+  `status` int(11) NOT NULL DEFAULT '0',
+  `upgradePayNumber` int(11) NOT NULL DEFAULT '0',
+  `upgradeScore` int(11) NOT NULL DEFAULT '0',
+  `upgradeSendScore` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
 
+-- Create syntax for TABLE 'pics'
+CREATE TABLE `pics` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `goodsId` int(11) NOT NULL DEFAULT '0',
+  `pic` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+
+-- Create syntax for TABLE 'properties'
+CREATE TABLE `properties` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+
+-- Create syntax for TABLE 'skuList'
+CREATE TABLE `skulist` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `goodsId` int(11) DEFAULT '0',
+  `originalPrice` int(11) NOT NULL DEFAULT '0',
+  `pingtuanPrice` int(11) NOT NULL DEFAULT '0',
+  `price` int(11) NOT NULL DEFAULT '0',
+  `score` int(11) NOT NULL DEFAULT '0',
+  `stores` int(11) NOT NULL DEFAULT '0',
+  `propertyChildIds` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+
+-- Create syntax for TABLE 'user'
 CREATE TABLE `user` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(60) NOT NULL DEFAULT '',
@@ -43,60 +130,51 @@ CREATE TABLE `user` (
   `city` varchar(50) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_name` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
 
 
-CREATE TABLE `level` (
+
+
+
+CREATE TABLE `address` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `dateAdd` int(11) NOT NULL DEFAULT '0',
-  `dateUpdate` int(11) NOT NULL DEFAULT '0',
-  `defValidityUnit` int(11) NOT NULL DEFAULT '0',
-  `level` int(11) NOT NULL DEFAULT '1',
-  `paixu` int(11) NOT NULL DEFAULT '0',
-  `rebate` int(11) NOT NULL DEFAULT '0',
-  `sendPerMonthScore` int(11) NOT NULL DEFAULT '0',
+  `address` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `areaStr` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `cityStr` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `linkMan` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `mobile` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `provinceId` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `provinceStr` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `districtId` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+
+
+
+
+
+
+
   `status` int(11) NOT NULL DEFAULT '0',
-  `upgradePayNumber` int(11) NOT NULL DEFAULT '0',
-  `upgradeScore` int(11) NOT NULL DEFAULT '0',
-  `upgradeSendScore` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `userId` int(11) NOT NULL DEFAULT '0',
+ 
 
-CREATE TABLE `amount` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `balance` int(11) NOT NULL DEFAULT '0',
-  `freeze` int(11) NOT NULL DEFAULT '0',
-  `fxCommisionPaying` int(11) NOT NULL DEFAULT '0',
-  `growth` int(11) NOT NULL DEFAULT '0',
-  `score` int(11) NOT NULL DEFAULT '0',
-  `scoreLastRound` int(11) NOT NULL DEFAULT '0',
-  `totalPayAmount` int(11) NOT NULL DEFAULT '0',
-  `totalPayNumber` int(11) NOT NULL DEFAULT '0',
-  `totalScore` int(11) NOT NULL DEFAULT '0',
-  `totalWithdraw` int(11) NOT NULL DEFAULT '0',
-  `totleConsumed` int(11) NOT NULL DEFAULT '0',
+   `isDefault` tinyint(1) NOT NULL DEFAULT '0',
+
+  
+
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
-
-LOCK TABLES `nideshop_user` WRITE;
-/*!40000 ALTER TABLE `nideshop_user` DISABLE KEYS */;
-
-INSERT INTO `nideshop_user` (`id`, `username`, `password`, `gender`, `birthday`, `register_time`, `last_login_time`, `last_login_ip`, `user_level_id`, `nickname`, `mobile`, `register_ip`, `avatar`, `weixin_openid`)
-VALUES
-	(1,'微信用户f81de83a-84a0-459e-8597-988bf80d8271','',1,0,1678790393,1678790393,'::ffff:171.42.100.96',0,'微信用户','','::ffff:171.42.100.96','https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUq24ZEaGT4poC6icRiccVGKSyXwibcPq4BWmiaIGuG1icwxaQX6grC9VemZoJ8rg/132','oR_w26H4SKHb-04mSUyx317j1a6Q');
-
-/*!40000 ALTER TABLE `nideshop_user` ENABLE KEYS */;
-UNLOCK TABLES;
-
-
-
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+id
+address
+areaStr
+cityId
+cityStr
+districtId
+isDefault
+linkMan
+mobile
+provinceId
+provinceStr
+status
+userId

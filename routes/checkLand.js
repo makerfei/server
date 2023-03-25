@@ -10,11 +10,11 @@ router.post('/login', async function (ctx, next) {
     let res = await sql.promiseCall(`select id from user where password = '${pwd}' and mobile = '${mobile}'`);
     if (res.results && res.results.length > 0) {
         ctx.session.userId = res.results[0].id;
-        let a = await sql.promiseCall(`update user set last_login_ip = '${ctx.ip}' ,last_login_time = ${Number(new Date().getTime() / 1000).toFixed(0)}  where id =${res.results[0].id}`);
+        await sql.promiseCall(`update user set last_login_ip = '${ctx.ip}' ,last_login_time = ${Number(new Date().getTime() / 1000).toFixed(0)}  where id =${res.results[0].id}`);
         ctx.body = {
             code: 0,
             "data": { "token": res.results[0].id, "uid": res.results[0].id },
-            msg: "登录成功"
+            msg: "success"
         }
     } else {
         ctx.body = { code: -1, msg: "登录失败，密码或账号错误" }
@@ -44,10 +44,10 @@ router.post('/loginMobile', async function (ctx, next) {
         ctx.body = {
             code: 0,
             "data": { "token": insertId, "uid": insertId },
-            mes: "succcess"
+            msg: "succcess"
         }
     } else {
-        ctx.body = { code: -1, mes: errText }
+        ctx.body = { code: -1, msg: errText }
     }
 })
 
@@ -159,6 +159,7 @@ const adminIndex = (app) => {
         if ((ctx.originalUrl.indexOf('/api/user') === 0 ||
             ctx.originalUrl.indexOf('/api/admin') === 0 ||
             ctx.originalUrl.indexOf('/api/dfs') === 0 ||
+            ctx.originalUrl.indexOf('/api/shopping-cart') === 0 ||
             ctx.originalUrl.indexOf('/api/order') === 0)
             && !ctx.session.userId) {
             needLand = true;
