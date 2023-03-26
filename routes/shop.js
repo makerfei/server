@@ -123,6 +123,7 @@ router.get('/detail', async function (ctx, next) {
                 goodsCon.basicInfo = goodsSql?.results[0];
                 goodsCon.content = goodsCon.basicInfo.content;
                 goodsCon.basicInfo.content = undefined;
+                goodsCon.basicInfo.statusStr = goodsCon.basicInfo.status===1?'商品已下架':''
                 categoryPid = goodsCon.basicInfo.categoryId
                 //物流信息
                 goodsCon.logistics = {

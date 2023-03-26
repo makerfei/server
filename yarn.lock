@@ -1,3 +1,0 @@
-INSERT INTO logistics ( address, linkMan, mobile, provinceId, districtId, orderId, cityId)
-VALUES
-	( '${address}', '${linkMan}', '${mobile}', '${provinceId}', '${districtId}', ${resData.id}, '${cityId}');
