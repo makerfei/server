@@ -3,6 +3,59 @@ const sql = require('../tool/sqlConfig')
 router.prefix('/api/shop/goods')
 
 
+//获取商品评价
+router.post('/reputation/v2', async function (ctx, next) {
+    let { goodsId, page = 1, pageSize = 10 } = ctx.request.body;
+    let errText = ''
+    let goodsList = [];
+    let totalRow = 0;
+    //查询条数
+    if (!errText) {
+        let goodsSql = await sql.promiseCall(`select a.*,b.username,b.mobile,b.avatar as avatarUrl  from reputations as a left join user as b on a.userId = b.id where a.goodsId = ${goodsId} ORDER BY id desc
+        LIMIT ${(page - 1) * pageSize},${pageSize} `);
+        if (!goodsSql.error) {
+            goodsSql.results.map(item => {
+                let { reputation, remark, avatarUrl, mobile, username ,id,dateAdd} = item
+                goodsList.push(
+                    {
+                        goods: {dateReputation:dateAdd, goodReputationStr:reputation, goodReputationRemark:remark, uid:id},
+                        user: { avatarUrl, mobile, username,uid:id }
+                    }
+                )
+            })
+        } else {
+            errText = goodsSql.error.message
+        }
+    }
+
+    //查询数量
+    if (!errText) {
+        let goodsSql = await sql.promiseCall(`select count(*) as count from reputations where goodsId = ${goodsId}`);
+        if (!goodsSql.error) {
+            totalRow = goodsSql.results[0].count
+        } else {
+            errText = goodsSql.error.message
+        }
+    }
+
+    if (!errText) {
+        ctx.body = {
+            code: 0,
+            data: {
+                result: goodsList,
+                totalPage: Math.ceil(totalRow / pageSize),
+                totalRow: totalRow,
+            },
+            msg: 'success'
+        }
+    } else {
+        ctx.body = { code: -1, msg: errText }
+    }
+
+
+})
+
+//获取商品类目
 router.get('/category/all', async function (ctx, next) {
     let categorySql = await sql.promiseCall(`select * from category where isUse = 1 ORDER BY paixu ASC`);
     if (!categorySql.error) {
@@ -12,10 +65,9 @@ router.get('/category/all', async function (ctx, next) {
     }
 })
 
-
+//获取商品列表
 router.post('/list/v2', async function (ctx, next) {
     let { categoryId, page = 1, pageSize = 10 } = ctx.request.body;
-
     let errortxt = ''
     let whereSqlTxt = ''
     let resCount = 0;
@@ -53,7 +105,7 @@ router.post('/list/v2', async function (ctx, next) {
     }
 })
 
-
+//获取商品详情
 router.get('/detail', async function (ctx, next) {
     let { id } = ctx.request.query;
     let errortxt = "";
@@ -152,7 +204,7 @@ router.get('/detail', async function (ctx, next) {
     if (!errortxt) {
         ctx.body = { code: 0, data: goodsCon, msg: "success" }
     } else {
-        ctx.body = { code: -1,msg: errortxt }
+        ctx.body = { code: -1, msg: errortxt }
     }
 })
 

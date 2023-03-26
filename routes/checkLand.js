@@ -1,7 +1,7 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
-
 const svgCaptcha = require('svg-captcha')
+const moment=require('moment');
 router.prefix('/api')
 
 //登录
@@ -10,7 +10,7 @@ router.post('/login', async function (ctx, next) {
     let res = await sql.promiseCall(`select id from user where password = '${pwd}' and mobile = '${mobile}'`);
     if (res.results && res.results.length > 0) {
         ctx.session.userId = res.results[0].id;
-        await sql.promiseCall(`update user set last_login_ip = '${ctx.ip}' ,last_login_time = ${Number(new Date().getTime() / 1000).toFixed(0)}  where id =${res.results[0].id}`);
+       let sqllogin =  await sql.promiseCall(`update user set last_login_ip = '${ctx.ip}' ,last_login_time = '${ moment(new Date()).format('YYYY-MM-DD HH:mm:ss') }'  where id =${res.results[0].id}`);
         ctx.body = {
             code: 0,
             "data": { "token": res.results[0].id, "uid": res.results[0].id },
@@ -33,7 +33,7 @@ router.post('/loginMobile', async function (ctx, next) {
     if (!errText) {
         let res = await sql.promiseCall(`select id from user where  mobile = '${mobile}'`);
         if (!res.error && res.results.length > 0) {
-            await sql.promiseCall(`update user set last_login_ip = '${ctx.ip}' ,last_login_time = ${Number(new Date().getTime() / 1000).toFixed(0)}  where id =${res.results[0].id}`);
+            let sqllogin =  await sql.promiseCall(`update user set last_login_ip = '${ctx.ip}' ,last_login_time ='${ moment(new Date()).format('YYYY-MM-DD HH:mm:ss') }'  where id =${res.results[0].id}`);
             insertId = res.results[0].id;
         } else {
             errText = "请先注册！"
@@ -114,10 +114,9 @@ router.post('/register', async function (ctx, next) {
    
 
     if (!errText) {
-        let sqlstr = `INSERT INTO user ( username, password,  register_time,mobile , register_ip)VALUES(
+        let sqlstr = `INSERT INTO user ( username, password,mobile , register_ip)VALUES(
             "${nick}",
             "${pwd}",
-            ${Number(new Date().getTime() / 1000).toFixed(0)},
            "${mobile}",
             "${ctx.ip}")`;
         let sqlRes = await sql.promiseCall(sqlstr);
@@ -129,7 +128,7 @@ router.post('/register', async function (ctx, next) {
     }
 
     if (!errText) {
-        let Sqllevel = await sql.promiseCall(`INSERT INTO level(dateAdd,user_id) VALUES(${Number(new Date().getTime() / 1000).toFixed(0)},${insertId})`);
+        let Sqllevel = await sql.promiseCall(`INSERT INTO level(user_id) VALUES(${insertId})`);
         if (Sqllevel.error ) {
             errText = Sqllevel.error.message
         }

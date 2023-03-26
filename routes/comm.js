@@ -45,9 +45,7 @@ router.all('/email', async function (ctx, next) {
 
 
 
-router.post('/shop/goods/reputation/v2', async function (ctx, next) {
-  ctx.body = { "code": 0, "data": { "result": [{ "goods": { "afterSale": "0,1,2", "amount": 3.00, "amountCoupon": 0.00, "amountSingle": 1.00, "amountSingleBase": 1.00, "benefitFwf": 0.00, "benefitOther1": 0.00, "benefitSale": 0.00, "buyRewardEnd": false, "categoryId": 272693, "cost": 0.00, "cyTableStatus": 1, "dateAdd": "2022-02-05 19:44:48", "dateReputation": "2022-03-07 21:20:00", "fxType": 2, "goodReputation": 2, "goodReputationRemark": "系统默认好评", "goodReputationStr": "好评", "goodsId": 1052000, "goodsIdStr": "1052000", "goodsName": "实物商品（购买时需填写收货地址，支持售后）", "id": 2064935, "isProcessHis": true, "isScoreOrder": false, "number": 3, "numberNoFahuo": 0, "orderId": 1298567, "persion": 0, "pic": "https://dcdn.it120.cc/2022/02/04/fa78ff5e-553f-40f2-8c78-b7ab8ed8bd39.png", "propertyChildIds": "", "purchase": true, "refundStatus": 1, "score": 0, "shopId": 0, "status": 4, "type": 0, "uid": 869081, "unit": "件", "userId": 1605 }, "user": { "avatarUrl": "https://dcdn.it120.cc/2022/01/31/ea90f530-4e4f-4a9b-a979-b39cd36429a5.jpg", "mobile": "153****4345", "nick": "J****hu", "uid": 869081 } }], "totalPage": 5, "totalRow": 5 }, "msg": "success" }
-})
+
 
 
 
