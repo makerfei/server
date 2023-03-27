@@ -15,7 +15,7 @@ const dfs = require('./routes/dfs')
 const shop = require('./routes/shop')
 const shoppingCart = require('./routes/shoppingcart')
 
-
+const admin = require('./routes/admin/index')
 // error handler
 onerror(app)
 
@@ -59,6 +59,7 @@ app.use(async (ctx, next) => {
 adminIndex(app);
 
 
+app.use(admin.routes(), admin.allowedMethods())
 app.use(shoppingCart.routes(), shoppingCart.allowedMethods())
 app.use(shop.routes(), shop.allowedMethods())
 app.use(dfs.routes(), dfs.allowedMethods())

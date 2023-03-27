@@ -1,16 +1,55 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
 const svgCaptcha = require('svg-captcha')
-const moment=require('moment');
+const moment = require('moment');
 router.prefix('/api')
+
+
+
+
+
+//后端登录
+router.post('/loginAdmin', async function (ctx, next) {
+    let errText = ''
+    const { autoLogin, password, type, username } = ctx?.request?.body;
+    let res = await sql.promiseCall({ sql: `select id ,type from user where password = ? and mobile = ?`, values: [password, username] });
+    if (res.results && res.results.length > 0) {
+
+        if (res.results[0].type > 0) {
+            ctx.session.userId = res.results[0].id;
+            ctx.session.userType = res.results[0].type;
+            let sqllogin = await sql.promiseCall({ sql: `update user set last_login_ip = '${ctx.ip}' ,last_login_time = '${moment(new Date()).format('YYYY-MM-DD HH:mm:ss')}'  where id =?`, values: [res.results[0].id] });
+        } else {
+            errText = '权限不够'
+        }
+    }else{
+        errText = '账号密码错误'
+    }
+
+    if (!errText) {
+        ctx.body = {
+            status: 'ok',
+            type,
+            currentAuthority: 'admin',
+        }
+    } else {
+        ctx.body = {
+            status: 'error',
+            type,
+            currentAuthority: 'guest',
+            message:errText
+        }
+    }
+})
+
 
 //登录
 router.post('/login', async function (ctx, next) {
     const { mobile, deviceId, deviceName, pwd, token } = ctx?.request?.body;
-    let res = await sql.promiseCall({sql:`select id from user where password = ? and mobile = ?`,values:[pwd,mobile]});
+    let res = await sql.promiseCall({ sql: `select id from user where password = ? and mobile = ?`, values: [pwd, mobile] });
     if (res.results && res.results.length > 0) {
         ctx.session.userId = res.results[0].id;
-       let sqllogin =  await sql.promiseCall({sql:`update user set last_login_ip = '${ctx.ip}' ,last_login_time = '${ moment(new Date()).format('YYYY-MM-DD HH:mm:ss') }'  where id =?`,values:[res.results[0].id]});
+        let sqllogin = await sql.promiseCall({ sql: `update user set last_login_ip = '${ctx.ip}' ,last_login_time = '${moment(new Date()).format('YYYY-MM-DD HH:mm:ss')}'  where id =?`, values: [res.results[0].id] });
         ctx.body = {
             code: 0,
             "data": { "token": res.results[0].id, "uid": res.results[0].id },
@@ -31,9 +70,9 @@ router.post('/loginMobile', async function (ctx, next) {
         errText = "短信验证码错误"
     }
     if (!errText) {
-        let res = await sql.promiseCall({sql:`select id from user where  mobile = ?`,values:[mobile]})
+        let res = await sql.promiseCall({ sql: `select id from user where  mobile = ?`, values: [mobile] })
         if (!res.error && res.results.length > 0) {
-            let sqllogin =  await sql.promiseCall({sql:`update user set last_login_ip = ? ,last_login_time ='${ moment(new Date()).format('YYYY-MM-DD HH:mm:ss') }'  where id =?`,values:[ctx.ip,res.results[0].id]});
+            let sqllogin = await sql.promiseCall({ sql: `update user set last_login_ip = ? ,last_login_time ='${moment(new Date()).format('YYYY-MM-DD HH:mm:ss')}'  where id =?`, values: [ctx.ip, res.results[0].id] });
             insertId = res.results[0].id;
         } else {
             errText = "请先注册！"
@@ -106,12 +145,12 @@ router.post('/register', async function (ctx, next) {
 
     //判断电话是否被注册
     if (!errText) {
-        let count = await sql.promiseCall({sql:`select count(*) as res from user where mobile = ?`,values:[mobile]});
+        let count = await sql.promiseCall({ sql: `select count(*) as res from user where mobile = ?`, values: [mobile] });
         if (count.error || count.results[0].res > 0) {
             errText = "手机号已被注册！"
         }
     }
-   
+
 
     if (!errText) {
         let sqlstr = `INSERT INTO user ( username, password,mobile , register_ip)VALUES(
@@ -128,14 +167,14 @@ router.post('/register', async function (ctx, next) {
     }
 
     if (!errText) {
-        let Sqllevel = await sql.promiseCall({sql:`INSERT INTO level(user_id) VALUES(?)`,values:[insertId]});
-        if (Sqllevel.error ) {
+        let Sqllevel = await sql.promiseCall({ sql: `INSERT INTO level(user_id) VALUES(?)`, values: [insertId] });
+        if (Sqllevel.error) {
             errText = Sqllevel.error.message
         }
     }
 
     if (!errText) {
-        let Sqlamount = await sql.promiseCall({sql:`INSERT INTO amount(user_id) VALUES(?)`,values:[insertId]});
+        let Sqlamount = await sql.promiseCall({ sql: `INSERT INTO amount(user_id) VALUES(?)`, values: [insertId] });
         if (Sqlamount.error) {
             errText = Sqlamount.error.message
         }
