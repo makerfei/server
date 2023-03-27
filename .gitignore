@@ -2,5 +2,6 @@
 node_modules
 config
 public/assets
+public/upload
 public/index.css
 public/index.html

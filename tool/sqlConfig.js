@@ -14,12 +14,7 @@ var sql ={
         connection.end();
     },
 
-    //执行存储过程
-    call(query,res){
-        this.start(query,(error,results,fields)=>{
-            res(error,results,fields);  
-        });
-    },
+   
     // promise执行存储过程
     promiseCall(query){
         return  new Promise((res,rej)=>{
