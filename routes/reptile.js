@@ -27,12 +27,14 @@ router.get('/reptile', async function (ctx, next) {
         if (s && s.indexOf('var') == 0) {
             if (s && s.indexOf('var _DATA_Detail =') == 0) {
                 s = s.replace('var _DATA_Detail =', '')
-                // s = s.split(', "mock"')[0]+'}'
-                // s = s.replace(/waitForS.*"moduleType": 1,/, '"moduleType": 1,')
+                let sss  = s.split(', "mock"');
+                let s1 =sss[0]+'}'
+                let s2 = sss[1]
+               // let s = s.replace(/waitForS.*"moduleType": 1,/, '"moduleType": 1,')
 
                 
-                console.log(s)
-               // var _DATA_Detail = JSON.parse(s)
+                console.log(s1)
+               var _DATA_Detail = JSON.parse(s1)
                 console.log(_DATA_Detail.userId)
             }
 
