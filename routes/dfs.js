@@ -13,13 +13,11 @@ router.post('/upload/file', async function (ctx, next) {
             let fileType =   String(files.upfile.originalFilename).split('.')[1] || 'png';
             let fileName = new Date().getTime();
             let fullPath = `upload/${fileName}.${fileType}`
-            fs.copyFileSync(files.upfile.filepath, path.join(__dirname, `../public/upload`, `${fileName}.${fileType}`))
+            fs.copyFileSync(files.upfile.filepath, path.join(__dirname, `../public/upload`, `${fileName}.${fileType}`));
+
+            fs.writeSync()
             res({ "code": 0, "data": { "url": fullPath }, "msg": "success" })
         })
     })
-
-
-
-
 })
 module.exports = router
