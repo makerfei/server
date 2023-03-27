@@ -7,7 +7,7 @@ router.prefix('/api')
 
 router.get('/banner/list', async function (ctx, next) {
   const { type } = ctx.request.query;
-  let bannerSql = await sql.promiseCall(`select * from banner where type = '${type}' ORDER BY paixu ASC`);
+  let bannerSql = await sql.promiseCall({sql:`select * from banner where type = ? ORDER BY paixu ASC`,values:[type]});
   if (!bannerSql.error) {
     ctx.body = { "code": 0, "data": bannerSql.results, "msg": "success" }
   } else {

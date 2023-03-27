@@ -8,7 +8,7 @@ router.get('/detail', async function (ctx, next) {
     base: {},
     userLevel: {}
   }
-  let res = await sql.promiseCall(`select * ,avatar as avatarUrl,username as nick,id as userId   from user where id = '${ctx.session.userId}'`);
+  let res = await sql.promiseCall({sql:`select * ,avatar as avatarUrl,username as nick,id as userId   from user where id = '${ctx.session.userId}'`,values:[]});
   if (!res.error && res.results.length > 0) {
     resData.base = res.results[0]
   } else {
@@ -16,7 +16,7 @@ router.get('/detail', async function (ctx, next) {
   }
 
   if (!errortxt) {
-    let levelsql = await sql.promiseCall(`select * from level where user_id = '${ctx.session.userId}'`);
+    let levelsql = await sql.promiseCall({sql:`select * from level where user_id = '${ctx.session.userId}'`,values:[]});
     if (!levelsql.error && levelsql.results.length > 0) {
       resData.userLevel = levelsql.results[0]
     } else {
@@ -114,7 +114,8 @@ router.get('/detail', async function (ctx, next) {
 //更改用户信息
 router.get('/modify', async function (ctx, next) {
   let { nick, avatarUrl, province, city } = ctx?.request?.query;
-  let res = await sql.promiseCall(`update user set avatar = '${avatarUrl}',username = '${nick}',province = '${province}', city = '${city}' where id =${ctx.session.userId}`);
+  let res = await sql.promiseCall({sql:`update user set avatar = ?,username = ?,province = ?, city = ? where id =?`,
+  values:[avatarUrl,nick,province,city,ctx.session.userId]});
   if (!res.error) {
     ctx.body = { "code": 0, "msg": "success" }
   } else {
@@ -126,7 +127,7 @@ router.get('/modify', async function (ctx, next) {
 router.get('/amount', async function (ctx, next) {
   let errortxt = ""
   let resData = {};
-  let amountsql = await sql.promiseCall(`select * from amount where user_id = '${ctx.session.userId}'`);
+  let amountsql = await sql.promiseCall({sql:`select * from amount where user_id = '${ctx.session.userId}'`,values:[]});
   if (!amountsql.error && amountsql.results.length > 0) {
     resData = amountsql.results[0]
   } else {
@@ -151,7 +152,7 @@ router.get('/loginout', function (ctx, next) {
 router.post('/shipping-address/list/v2', async function (ctx, next) {
   let resData = [];
   let errortxt = ""
-  let addressSql = await sql.promiseCall(`select * from address where userId = '${ctx.session.userId}'`);
+  let addressSql = await sql.promiseCall({sql:`select * from address where userId = '${ctx.session.userId}'`,values:[]});
   if (!addressSql.error > 0) {
     resData = addressSql.results
   } else {
@@ -168,7 +169,7 @@ router.post('/shipping-address/list/v2', async function (ctx, next) {
 router.get('/shipping-address/default/v2', async function (ctx, next) {
   let resData = [];
   let errortxt = ""
-  let addressSql = await sql.promiseCall(`select * from address where isDefault=1 and userId = '${ctx.session.userId}'`);
+  let addressSql = await sql.promiseCall({sql:`select * from address where isDefault=1 and userId = '${ctx.session.userId}'`,values:[]});
   if (!addressSql.error > 0) {
     resData = addressSql.results
   } else {
@@ -185,7 +186,7 @@ router.get('/shipping-address/detail/v2', async function (ctx, next) {
   let { id } = ctx.request.query;
   let resData = [];
   let errortxt = ""
-  let addressSql = await sql.promiseCall(`select * from address where  id = ${id} and userId = '${ctx.session.userId}'`);
+  let addressSql = await sql.promiseCall({sql:`select * from address where  id = ${id} and userId = '${ctx.session.userId}'`,values:[]});
   if (!addressSql.error > 0) {
     resData = addressSql.results
   } else {
@@ -217,12 +218,14 @@ router.post('/shipping-address/add', async function (ctx, next) {
   let cityStr = areaStrList[1] || ''
   let areaStrT = areaStrList[2] || ''
 
-  let addressSql = await sql.promiseCall(` INSERT INTO address (address, areaStr, cityStr, linkMan, mobile, provinceId, provinceStr, districtId, userId, isDefault, cityId)
+  let addressSql = await sql.promiseCall({sql:` INSERT INTO address (address, areaStr, cityStr, linkMan, mobile, provinceId, provinceStr, districtId, userId, isDefault, cityId)
   VALUES
-    ( '${address}', '${areaStrT}', '${cityStr}', '${linkMan}', '${mobile}', '${provinceId}', '${provinceStr}', '${districtId}', ${ctx.session.userId}, ${isDefault ? 1 : 0}, ${cityId});`);
+    ( ?, '${areaStrT}', '${cityStr}', ?, ?, '${provinceId}', '${provinceStr}', '${districtId}', ${ctx.session.userId}, ${isDefault ? 1 : 0}, ${cityId});`,
+    
+    values:[address,linkMan,mobile]});
   if (!addressSql.error) {
     if (isDefault) {
-      await sql.promiseCall(`update address set isDefault = '${0}' where isDefault = 1 and id != ${addressSql.results.insertId} and userId = '${ctx.session.userId}'`)
+      await sql.promiseCall({sql:`update address set isDefault = '${0}' where isDefault = 1 and id != ${addressSql.results.insertId} and userId = '${ctx.session.userId}'`,values:[]})
     }
     ctx.body = { "code": 0, "msg": "success" }
   } else {
@@ -236,10 +239,10 @@ router.post('/shipping-address/update', async function (ctx, next) {
   let provinceStr = areaStrList[0] || ''
   let cityStr = areaStrList[1] || ''
   let areaStrT = areaStrList[2] || ''
-  let addressSql = await sql.promiseCall(`update address set 
-  address = '${address}',
-  linkMan = '${linkMan}',
-  mobile = '${mobile}',
+  let addressSql = await sql.promiseCall({sql:`update address set 
+  address = ?,
+  linkMan = ?,
+  mobile = ?,
   isDefault = '${isDefault ? 1 : 0}',
   provinceId = '${provinceId}',
   cityId = '${cityId}',
@@ -247,10 +250,10 @@ router.post('/shipping-address/update', async function (ctx, next) {
   provinceStr = '${provinceStr}',
   cityStr = '${cityStr}',
   areaStr = '${areaStrT}'
-   where id =${id}`);
+   where id =${id}`,values:[address,linkMan,mobile]});
   if (!addressSql.error) {
     if (isDefault) {
-      await sql.promiseCall(`update address set isDefault = '${0}' where isDefault = 1 and id != ${id} and userId = '${ctx.session.userId}'`)
+      await sql.promiseCall({sql:`update address set isDefault = '${0}' where isDefault = 1 and id != ${id} and userId = '${ctx.session.userId}'`,values:[]})
     }
     ctx.body = { "code": 0, "msg": "success" }
   } else {
@@ -262,7 +265,7 @@ router.post('/shipping-address/update', async function (ctx, next) {
 //删除地址
 router.post('/shipping-address/delete', async function (ctx, next) {
   let { id } = ctx.request.body;
-  let addressSqlDel = await sql.promiseCall(`DELETE from address where id = ${id} and userId = '${ctx.session.userId}'`)
+  let addressSqlDel = await sql.promiseCall({sql:`DELETE from address where id = ${id} and userId = '${ctx.session.userId}'`,values:[]})
   if (!addressSqlDel.error) {
     ctx.body = { "code": 0, "msg": "success" }
   } else {

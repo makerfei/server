@@ -14,9 +14,6 @@ router.post('/upload/file', async function (ctx, next) {
             let fileName = new Date().getTime();
             let fullPath = `upload/${fileName}.${fileType}`
             fs.copyFileSync(files.upfile.filepath, path.join(__dirname, `../public/upload`, `${fileName}.${fileType}`))
-           // fs.unlinkSync(path.join(__dirname, `../public/upload`, `${fileName}.${fileType}`));
-            
-            // await sql.promiseCall(`update user set avatar = '${fullPath}'  where id =${userId}`);
             res({ "code": 0, "data": { "url": fullPath }, "msg": "success" })
         })
     })

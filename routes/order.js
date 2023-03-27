@@ -26,8 +26,8 @@ let propertyChildIdsGetText = async function (keyStr) {
     for (let i = 0; i < keylist.length; i++) {
       let item = keylist[i].split(':');
       if (item.length >= 2 && item[0] && item[1]) {
-        let typenamesql = await sql.promiseCall(`select name from properties where id =${item[0]} limit 0,1`);
-        let valnamesql = await sql.promiseCall(`select name from childscurgoods where id =${item[1]} and propertyId=${item[0]} limit 0,1`);
+        let typenamesql = await sql.promiseCall({sql:`select name from properties where id =? limit 0,1`,values:[item[0]]});
+        let valnamesql = await sql.promiseCall({sql:`select name from childscurgoods where id =? and propertyId=? limit 0,1`,values:[item[1],item[0]]});
         if (!typenamesql.error && !valnamesql.error && typenamesql.results.length > 0 && valnamesql.results.length > 0) {
           resStr.push(`${typenamesql.results[0].name}:${valnamesql.results[0].name}`)
         }
@@ -40,7 +40,7 @@ let propertyChildIdsGetText = async function (keyStr) {
 //获取订单下面所有的商品信息
 let getOrderGoodsFun = function (orderId) {
   return new Promise(async (resolve, reject) => {
-    let ordergoodsSql = await sql.promiseCall(`select *, amountSingle as amount,goodsId as id,id as orderItemId from orderItem where orderId = ${orderId}`)
+    let ordergoodsSql = await sql.promiseCall({sql:`select *, amountSingle as amount,goodsId as id,id as orderItemId from orderItem where orderId = ?`,values:[orderId]});
     if (!ordergoodsSql.error) {
       resolve(ordergoodsSql.results)
     } else {
@@ -58,10 +58,10 @@ router.post('/reputation', async function (ctx, next) {
   let userId = ctx.session.userId;
   for (let i = 0; i<reputations.length; i++) {
     let item = reputations[i]
-    let repsql = await sql.promiseCall(` INSERT INTO reputations ( goodsId, orderId, userId, reputation, remark)
-    VALUES( ${item.id}, ${orderId},  ${userId}, ${item.reputation}, '${item.remark}')`)
+    let repsql = await sql.promiseCall({sql:` INSERT INTO reputations ( goodsId, orderId, userId, reputation, remark)
+    VALUES(?,?,?,?,? )`,values:[item.id, orderId,  userId, item.reputation, item.remark]});
   }
-  let upStatusSql = await sql.promiseCall(`update orderinfo set status=4 where id  = ${orderId}`)
+  let upStatusSql = await sql.promiseCall({sql:`update orderinfo set status=4 where id  = ?`,values:[orderId]})
   ctx.body = { "code": 0, msg: 'success' }
 })
 
@@ -82,12 +82,12 @@ router.post('/create', async function (ctx, next) {
   for (let i = 0; i < goodsList.length; i++) {
     let goods = goodsList[i]
     if (!errText) {
-      let goodsDateSql = await sql.promiseCall(`select minPrice as price,stores,id as goodsId,name as goodsName,pic from goods where id =${goods.goodsId} limit 0,1`);
+      let goodsDateSql = await sql.promiseCall({sql:`select minPrice as price,stores,id as goodsId,name as goodsName,pic from goods where id =? limit 0,1`,values:[goods.goodsId]});
       if (!goodsDateSql.error) {
         goodsList[i] = { ...goodsList[i], ...goodsDateSql?.results?.[0], property: '' }
         let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);
         if (delNumber >= 0) {
-          let jiansql = await sql.promiseCall(`update goods set  stores = ${delNumber}   where id =${goodsDateSql?.results?.[0]?.goodsId}`);
+          let jiansql = await sql.promiseCall({sql:`update goods set  stores = ${delNumber}   where id =?`,values:[goodsDateSql?.results?.[0]?.goodsId]});
         } else {
           errText = '库存不足'
         }
@@ -102,7 +102,7 @@ router.post('/create', async function (ctx, next) {
     if (!errText && goods.propertyChildIds) {
       //获取规格名称
       let property = await propertyChildIdsGetText(goods.propertyChildIds)
-      let goodsDateSql = await sql.promiseCall(`select  price,stores,id from skulist where goodsId =${goods.goodsId} and propertyChildIds='${goods.propertyChildIds},'  limit 0,1`);
+      let goodsDateSql = await sql.promiseCall({sql:`select  price,stores,id from skulist where goodsId =? and propertyChildIds=?  limit 0,1`,values:[goods.goodsId,goods.propertyChildIds+',']});
       if (!goodsDateSql.error && goodsDateSql?.results?.[0]?.price) {
         //更新价格
         goodsList[i] = { ...goodsList[i], price: goodsDateSql?.results?.[0]?.price || 0, property }
@@ -110,7 +110,7 @@ router.post('/create', async function (ctx, next) {
         //减库存
         let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);
         if (delNumber >= 0) {
-          let jiansql = await sql.promiseCall(`update skulist set  stores = ${delNumber}   where id =${goodsDateSql?.results?.[0]?.id}`);
+          let jiansql = await sql.promiseCall({sql:`update skulist set  stores = ${delNumber}   where id =?`,values:[goodsDateSql?.results?.[0]?.id]});
         } else {
           errText = '库存不足'
         }
@@ -131,8 +131,9 @@ router.post('/create', async function (ctx, next) {
   }
   //放入数据库 
   if (!errText) {
-    let orderInfoSql = await sql.promiseCall(`INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark)
-     VALUES('${orderNumber}',  ${amount}, ${amount}, ${goodsNumber},${peisongType == 'kd' ? 1 : 0} ,${ctx.session.userId},'${remark}');`)
+    let orderInfoSql = await sql.promiseCall({sql:`INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark)
+     VALUES(?,?,?,?,?,?,?);`,
+     values:[orderNumber,amount,amount,goodsNumber,peisongType == 'kd' ? 1 : 0,ctx.session.userId,remark]})
     if (orderInfoSql.error) {
       errText = orderInfoSql.error.message
     }
@@ -141,7 +142,7 @@ router.post('/create', async function (ctx, next) {
 
   //提取
   if (!errText) {
-    let orderInfoSql = await sql.promiseCall(`select * from orderInfo where orderNumber = ${orderNumber} limit 0 ,1 `)
+    let orderInfoSql = await sql.promiseCall({sql:`select * from orderInfo where orderNumber = ? limit 0 ,1`,values:[orderNumber]})
     if (!orderInfoSql.error) {
       resData = orderInfoSql.results[0] || {}
     } else {
@@ -151,8 +152,9 @@ router.post('/create', async function (ctx, next) {
 
   //物流地址保存数据库
   if (!errText) {
-    let orderInfoSql = await sql.promiseCall(`INSERT INTO logistics ( address, linkMan, mobile, provinceId, districtId, orderId, cityId)
-  VALUES ( '${address}', '${linkMan}', '${mobile}', '${provinceId}', '${districtId}', ${resData.id}, '${cityId}');`)
+    let orderInfoSql = await sql.promiseCall({sql:`INSERT INTO logistics ( address, linkMan, mobile, provinceId, districtId, orderId, cityId)
+  VALUES (?,?,?,?,?,?,?);`,
+  values:[address,linkMan,mobile,provinceId,districtId,resData.id,cityId]})
     if (orderInfoSql.error) {
       errText = orderInfoSql.error.message
     }
@@ -163,8 +165,9 @@ router.post('/create', async function (ctx, next) {
     for (let i = 0; i < goodsList.length; i++) {
       if (!errText) {
         let item = goodsList[i]
-        let orderItemSql = await sql.promiseCall(`INSERT INTO orderItem (goodsId, number, propertyChildIds, property, orderId, amountSingle, goodsName, pic)
-          VALUES('${item.goodsId}', ${item.number}, '${item.propertyChildIds}', '${item.property || ''}',${resData.id} ,${item.price},'${item.goodsName}','${item.pic}');`)
+        let orderItemSql = await sql.promiseCall({sql:`INSERT INTO orderItem (goodsId, number, propertyChildIds, property, orderId, amountSingle, goodsName, pic)
+          VALUES(?,?,?,?,?,?,?,?);`,
+          values:[item.goodsId,item.number,item.propertyChildIds,item.property || '',resData.id,item.price,item.goodsName,item.pic]})
         if (orderItemSql.error) {
           errText = orderItemSql.error.message
         }
@@ -187,7 +190,7 @@ router.get('/detail', async function (ctx, next) {
   let resData = {}
   //订单详情
   if (!errText) {
-    let orderInfoSql = await sql.promiseCall(`select * from orderInfo where userId=${ctx.session.userId} and  orderNumber = ${orderNumber} limit 0 ,1 `)
+    let orderInfoSql = await sql.promiseCall({sql:`select * from orderInfo where userId=? and  orderNumber = ? limit 0 ,1 `,values:[ctx.session.userId,orderNumber]})
     if (!orderInfoSql.error) {
       resData.orderInfo = orderInfoSql.results[0] || {}
     } else {
@@ -202,7 +205,7 @@ router.get('/detail', async function (ctx, next) {
 
   //获取订单地址详情
   if (!errText && resData.orderInfo.isNeedLogistics) {
-    let orderInfoSql = await sql.promiseCall(`select * from logistics where orderId=${resData.orderInfo.id}  limit 0 ,1 `);
+    let orderInfoSql = await sql.promiseCall({sql:`select * from logistics where orderId=?  limit 0 ,1 `,values:[resData.orderInfo.id]});
     if (!orderInfoSql.error) {
       if (orderInfoSql.results.length > 0) {
         resData.logistics = { ...orderInfoSql.results[0] }
@@ -242,7 +245,8 @@ router.post('/list', async function (ctx, next) {
 
 
   if (!errText) {
-    let orderInfoSql = await sql.promiseCall(`select * from orderInfo where userId=${userId} ${wheresql} order by id desc limit ${(page - 1) * pageSize},${pageSize}  `)
+    let orderInfoSql = await sql.promiseCall({sql:`select * from orderInfo where userId=? ${wheresql} order by id desc limit ${(page - 1) * pageSize},${pageSize}  `,
+    values:[userId,wheresql]})
     if (!orderInfoSql.error) {
       resData.orderList = orderInfoSql.results.map(item => {
         let statusStr = getStatusTxt(item.status)
