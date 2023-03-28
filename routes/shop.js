@@ -167,7 +167,9 @@ router.get('/detail', async function (ctx, next) {
     if (!errortxt) {
         let skuliatSql = await sql.promiseCall({sql:`select * from skuList where goodsId = ${id}`,values:[]});
         if (!skuliatSql.error) {
-            goodsCon.skuList = skuliatSql.results.length > 0 ? skuliatSql.results : []
+            goodsCon.skuList = skuliatSql.results.map(item=>{
+                return {...item,propertyChildIds:item.propertyChildIds+','}
+            })
         } else {
             errortxt = skuliatSql.error.message
         }

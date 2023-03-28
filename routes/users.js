@@ -8,7 +8,7 @@ router.get('/detail', async function (ctx, next) {
     base: {},
     userLevel: {}
   }
-  let res = await sql.promiseCall({sql:`select * ,avatar as avatarUrl,username as nick,id as userId   from user where id = '${ctx.session.userId}'`,values:[]});
+  let res = await sql.promiseCall({ sql: `select * ,avatar as avatarUrl,username as nick,id as userId   from user where id = '${ctx.session.userId}'`, values: [] });
   if (!res.error && res.results.length > 0) {
     resData.base = res.results[0]
   } else {
@@ -16,7 +16,7 @@ router.get('/detail', async function (ctx, next) {
   }
 
   if (!errortxt) {
-    let levelsql = await sql.promiseCall({sql:`select * from level where user_id = '${ctx.session.userId}'`,values:[]});
+    let levelsql = await sql.promiseCall({ sql: `select * from level where user_id = '${ctx.session.userId}'`, values: [] });
     if (!levelsql.error && levelsql.results.length > 0) {
       resData.userLevel = levelsql.results[0]
     } else {
@@ -114,8 +114,10 @@ router.get('/detail', async function (ctx, next) {
 //更改用户信息
 router.get('/modify', async function (ctx, next) {
   let { nick, avatarUrl, province, city } = ctx?.request?.query;
-  let res = await sql.promiseCall({sql:`update user set avatar = ?,username = ?,province = ?, city = ? where id =?`,
-  values:[avatarUrl,nick,province,city,ctx.session.userId]});
+  let res = await sql.promiseCall({
+    sql: `update user set avatar = ?,username = ?,province = ?, city = ? where id =?`,
+    values: [avatarUrl, nick, province, city, ctx.session.userId]
+  });
   if (!res.error) {
     ctx.body = { "code": 0, "msg": "success" }
   } else {
@@ -127,7 +129,7 @@ router.get('/modify', async function (ctx, next) {
 router.get('/amount', async function (ctx, next) {
   let errortxt = ""
   let resData = {};
-  let amountsql = await sql.promiseCall({sql:`select * from amount where user_id = '${ctx.session.userId}'`,values:[]});
+  let amountsql = await sql.promiseCall({ sql: `select * from amount where user_id = '${ctx.session.userId}'`, values: [] });
   if (!amountsql.error && amountsql.results.length > 0) {
     resData = amountsql.results[0]
   } else {
@@ -152,7 +154,7 @@ router.get('/loginout', function (ctx, next) {
 router.post('/shipping-address/list/v2', async function (ctx, next) {
   let resData = [];
   let errortxt = ""
-  let addressSql = await sql.promiseCall({sql:`select * from address where userId = '${ctx.session.userId}'`,values:[]});
+  let addressSql = await sql.promiseCall({ sql: `select * from address where userId = '${ctx.session.userId}'`, values: [] });
   if (!addressSql.error > 0) {
     resData = addressSql.results
   } else {
@@ -169,7 +171,7 @@ router.post('/shipping-address/list/v2', async function (ctx, next) {
 router.get('/shipping-address/default/v2', async function (ctx, next) {
   let resData = [];
   let errortxt = ""
-  let addressSql = await sql.promiseCall({sql:`select * from address where isDefault=1 and userId = '${ctx.session.userId}'`,values:[]});
+  let addressSql = await sql.promiseCall({ sql: `select * from address where isDefault=1 and userId = '${ctx.session.userId}'`, values: [] });
   if (!addressSql.error > 0) {
     resData = addressSql.results
   } else {
@@ -186,7 +188,7 @@ router.get('/shipping-address/detail/v2', async function (ctx, next) {
   let { id } = ctx.request.query;
   let resData = [];
   let errortxt = ""
-  let addressSql = await sql.promiseCall({sql:`select * from address where  id = ${id} and userId = '${ctx.session.userId}'`,values:[]});
+  let addressSql = await sql.promiseCall({ sql: `select * from address where  id = ${id} and userId = '${ctx.session.userId}'`, values: [] });
   if (!addressSql.error > 0) {
     resData = addressSql.results
   } else {
@@ -218,14 +220,16 @@ router.post('/shipping-address/add', async function (ctx, next) {
   let cityStr = areaStrList[1] || ''
   let areaStrT = areaStrList[2] || ''
 
-  let addressSql = await sql.promiseCall({sql:` INSERT INTO address (address, areaStr, cityStr, linkMan, mobile, provinceId, provinceStr, districtId, userId, isDefault, cityId)
+  let addressSql = await sql.promiseCall({
+    sql: ` INSERT INTO address (address, areaStr, cityStr, linkMan, mobile, provinceId, provinceStr, districtId, userId, isDefault, cityId)
   VALUES
     ( ?, '${areaStrT}', '${cityStr}', ?, ?, '${provinceId}', '${provinceStr}', '${districtId}', ${ctx.session.userId}, ${isDefault ? 1 : 0}, ${cityId});`,
-    
-    values:[address,linkMan,mobile]});
+
+    values: [address, linkMan, mobile]
+  });
   if (!addressSql.error) {
     if (isDefault) {
-      await sql.promiseCall({sql:`update address set isDefault = '${0}' where isDefault = 1 and id != ${addressSql.results.insertId} and userId = '${ctx.session.userId}'`,values:[]})
+      await sql.promiseCall({ sql: `update address set isDefault = '${0}' where isDefault = 1 and id != ${addressSql.results.insertId} and userId = '${ctx.session.userId}'`, values: [] })
     }
     ctx.body = { "code": 0, "msg": "success" }
   } else {
@@ -239,7 +243,8 @@ router.post('/shipping-address/update', async function (ctx, next) {
   let provinceStr = areaStrList[0] || ''
   let cityStr = areaStrList[1] || ''
   let areaStrT = areaStrList[2] || ''
-  let addressSql = await sql.promiseCall({sql:`update address set 
+  let addressSql = await sql.promiseCall({
+    sql: `update address set 
   address = ?,
   linkMan = ?,
   mobile = ?,
@@ -250,10 +255,11 @@ router.post('/shipping-address/update', async function (ctx, next) {
   provinceStr = '${provinceStr}',
   cityStr = '${cityStr}',
   areaStr = '${areaStrT}'
-   where id =${id}`,values:[address,linkMan,mobile]});
+   where id =${id}`, values: [address, linkMan, mobile]
+  });
   if (!addressSql.error) {
     if (isDefault) {
-      await sql.promiseCall({sql:`update address set isDefault = '${0}' where isDefault = 1 and id != ${id} and userId = '${ctx.session.userId}'`,values:[]})
+      await sql.promiseCall({ sql: `update address set isDefault = '${0}' where isDefault = 1 and id != ${id} and userId = '${ctx.session.userId}'`, values: [] })
     }
     ctx.body = { "code": 0, "msg": "success" }
   } else {
@@ -265,7 +271,7 @@ router.post('/shipping-address/update', async function (ctx, next) {
 //删除地址
 router.post('/shipping-address/delete', async function (ctx, next) {
   let { id } = ctx.request.body;
-  let addressSqlDel = await sql.promiseCall({sql:`DELETE from address where id = ${id} and userId = '${ctx.session.userId}'`,values:[]})
+  let addressSqlDel = await sql.promiseCall({ sql: `DELETE from address where id = ${id} and userId = '${ctx.session.userId}'`, values: [] })
   if (!addressSqlDel.error) {
     ctx.body = { "code": 0, "msg": "success" }
   } else {
@@ -282,7 +288,15 @@ router.post('/shipping-address/delete', async function (ctx, next) {
 
 
 router.post('/cashLog/v2', function (ctx, next) {
-  ctx.body = { "code": 0, "data": { "result": [{ "amount": 1.00, "balance": 11111939.99, "behavior": 1, "dateAdd": "2023-03-17 05:26:24", "freeze": 0.00, "id": 2231794, "orderId": 1784887, "orderId2": 1784887, "shopId": 0, "type": 2, "typeStr": "支付订单", "uid": 7448958, "userId": 1605 }, { "amount": 0.01, "balance": 940.99, "behavior": 1, "dateAdd": "2023-03-17 02:02:32", "freeze": 0.00, "id": 2231715, "orderId": 1784876, "orderId2": 1784876, "shopId": 0, "type": 2, "typeStr": "支付订单", "uid": 7448958, "userId": 1605 }, { "amount": 59.00, "balance": 941.00, "behavior": 1, "dateAdd": "2023-03-17 01:57:47", "freeze": 0.00, "id": 2231714, "orderId": 1784875, "orderId2": 1784875, "shopId": 0, "type": 2, "typeStr": "支付订单", "uid": 7448958, "userId": 1605 }, { "amount": 1000.00, "balance": 1000.00, "behavior": 0, "dateAdd": "2023-03-17 01:57:23", "freeze": 0.00, "id": 2231713, "type": 140, "typeStr": "积分兑换成金额", "uid": 7448958, "userId": 1605 }], "totalPage": 1, "totalRow": 4 }, "msg": "success" }
+  ctx.body = {
+    "code": 0, "data": {
+      "result": [
+        { "amount": 1.00, "balance": 11111939.99, "behavior": 1, "dateAdd": "2023-03-17 05:26:24", "freeze": 1, "id": 2231794, "orderId": 1784887, "orderId2": 1784887, "shopId": 0, "type": 2, "typeStr": "支付订单", "uid": 7448958, "userId": 1605 },
+        { "amount": 0.01, "balance": 940.99, "behavior": 1, "dateAdd": "2023-03-17 02:02:32", "freeze": 2, "id": 2231715, "orderId": 1784876, "orderId2": 1784876, "shopId": 0, "type": 2, "typeStr": "支付订单", "uid": 7448958, "userId": 1605 },
+        { "amount": 59.00, "balance": 941.00, "behavior": 1, "dateAdd": "2023-03-17 01:57:47", "freeze": -1, "id": 2231714, "orderId": 1784875, "orderId2": 1784875, "shopId": 0, "type": 2, "typeStr": "支付订单", "uid": 7448958, "userId": 1605 },
+        { "amount": 1000.00, "balance": 1000.00, "behavior": 0, "dateAdd": "2023-03-17 01:57:23", "freeze": 0.00, "id": 2231713, "type": 140, "typeStr": "积分兑换成金额", "uid": 7448958, "userId": 1605 }], "totalPage": 1, "totalRow": 4
+    }, "msg": "success"
+  }
 })
 
 
