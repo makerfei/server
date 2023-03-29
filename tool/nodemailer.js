@@ -9,13 +9,21 @@ const config = {
         ...configData
     }
 };
+
 // 创建一个SMTP客户端对象
 const transporter = nodemailer.createTransport(config);
+
+// // 入参数 
+// {
+// subject: '接受凭证',//邮箱主题
+// to: 'maker.wx@gmail.com',//前台传过来的邮箱
+// text: '用' + 32323 + '作为你的验证码'// 邮件内容，HTML格式
+// };
 //发送邮件
 module.exports = function (mail){
-    transporter.sendMail(mail, function(error, info){
+    transporter.sendMail({from:configData.from,...mail}, function(error, info){
         if(error) {
-            return console.log(error);
+             console.log(error);
         }
         console.log('mail sent:', info.response);
     });
