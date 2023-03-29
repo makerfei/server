@@ -1,5 +1,6 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
+const logisticsApi = require('../tool/logisticsApi')
 router.prefix('/api/order')
 const moment = require('moment');
 
@@ -426,6 +427,11 @@ router.get('/statistics', async function (ctx, next) {
   ctx.body = { "code": 0, "data": { "count_id_close": 10, "count_id_no_confirm": 9, "count_id_no_pay": 8, "count_id_no_reputation": 7, "count_id_no_transfer": 6, "count_id_peisonging": 5, "count_id_success": 4, "count_id_wait_to_peisong": 3 }, "msg": "success" }
 })
 
+
+//物流查询
+router.get('/logisticsApi', async function (ctx, next) {
+  ctx.body = await  logisticsApi(ctx.request.query)
+})
 
 
 

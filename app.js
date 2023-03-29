@@ -16,6 +16,7 @@ const shop = require('./routes/shop')
 const shoppingCart = require('./routes/shoppingcart')
 const admin = require('./routes/admin/index')
 const reptile = require('./routes/reptile')
+const logistic = require('./routes/logistic')
 // error handler
 onerror(app)
 
@@ -58,6 +59,9 @@ app.use(async (ctx, next) => {
 //app登录限制
 adminIndex(app);
 
+
+
+app.use(logistic.routes(), logistic.allowedMethods())
 app.use(reptile.routes(), reptile.allowedMethods())
 app.use(admin.routes(), admin.allowedMethods())
 app.use(shoppingCart.routes(), shoppingCart.allowedMethods())

@@ -69,12 +69,12 @@ router.get('/category/all', async function (ctx, next) {
 router.post('/list/v2', async function (ctx, next) {
     let { categoryId, page = 1, pageSize = 10 } = ctx.request.body;
     let errortxt = ''
-    let whereSqlTxt = ''
+    let whereSqlTxt = 'where status >=0'
     let resCount = 0;
     let resList = []
 
     if (categoryId) {
-        whereSqlTxt = ` where categoryId = ${categoryId} `
+        whereSqlTxt += ` and  categoryId = ${categoryId} `
     }
 
     let goodsCountSql = await sql.promiseCall({sql:`select count(*) as count from goods  ${whereSqlTxt} `,values:[]});
