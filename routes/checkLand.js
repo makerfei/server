@@ -4,7 +4,7 @@ const svgCaptcha = require('svg-captcha')
 const moment = require('moment');
 router.prefix('/api')
 
-
+const sms = require('../tool/sms')
 
 
 
@@ -101,8 +101,12 @@ router.get('/verification/sms/get', async function (ctx, next) {
     }
     //发送验证码
     if (!errtxt) {
+        let mathCode = Number(Math.random()*8999+1000).toFixed(0);
         ctx.session.imgCodeMobile = mobile;
-        ctx.session.RegisterSMSVerificationCode = '1234'
+        ctx.session.RegisterSMSVerificationCode = mathCode;
+        //进行短信发送
+        sms(mobile,mathCode);
+
     }
     if (!errtxt) {
         ctx.body = { "code": 0, "msg": "success" };

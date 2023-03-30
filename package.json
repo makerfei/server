@@ -32,7 +32,8 @@
     "node-fetch": "^2.6.9",
     "nodemailer": "^6.9.1",
     "pug": "^2.0.3",
-    "svg-captcha": "^1.4.0"
+    "svg-captcha": "^1.4.0",
+    "tencentcloud-sdk-nodejs-sms": "^4.0.570"
   },
   "devDependencies": {
     "nodemon": "^1.19.1"
