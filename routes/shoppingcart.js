@@ -8,7 +8,6 @@ let getCartLit = function (userId) {
         let cartList = [];
         let totalNumber=0;
         let totalPrice = 0;
-
         //获取购物车列表
         if (!errText) {
             let cartListSql = await sql.promiseCall({sql:`select * ,id as 'key' from shoppingcart where userId = ${userId} `,values:[]})

@@ -17,6 +17,10 @@ const shoppingCart = require('./routes/shoppingcart')
 const admin = require('./routes/admin/index')
 const reptile = require('./routes/reptile')
 const logistic = require('./routes/logistic')
+const wx = require('./routes/wx')
+//定时任务
+const schedule = require('./tool/schedule');
+schedule()
 // error handler
 onerror(app)
 
@@ -26,11 +30,23 @@ app.use(bodyparser({
 }))
 app.use(json())
 app.use(logger())
-app.use(require('koa-static')(__dirname + '/public'))
+
+
+
+// logger
+app.use(async (ctx, next) => {
+  ctx.set('Token',"zhangfei") 
+ 
+  const start = new Date()
+  await next()
+  const ms = new Date() - start
+  console.log(`${ctx.method} ${ctx.url} - ${ms}ms`)
+})
 
 app.use(views(__dirname + '/views', {
   extension: 'pug'
 }))
+app.use(require('koa-static')(__dirname + '/public'))
 
 const session_signed_key = ["some secret hurr"];  // 这个是配合signed属性的签名key
 const session_config = {
@@ -47,20 +63,14 @@ const session_config = {
 app.keys = session_signed_key	// session加密字段
 app.use(session(session_config, app))
 
-// logger
-app.use(async (ctx, next) => {
-  const start = new Date()
-  await next()
-  const ms = new Date() - start
-  console.log(`${ctx.method} ${ctx.url} - ${ms}ms`)
-})
+
 
 // routes
 //app登录限制
 adminIndex(app);
 
 
-
+app.use(wx.routes(), wx.allowedMethods())
 app.use(logistic.routes(), logistic.allowedMethods())
 app.use(reptile.routes(), reptile.allowedMethods())
 app.use(admin.routes(), admin.allowedMethods())

@@ -3,7 +3,19 @@ const sql = require('../tool/sqlConfig')
 const fs = require('fs')
 const path = require('path')
 const email = require('../tool/nodemailer')
+const shortlink = require('../tool/shortlink')
 router.prefix('/api')
+
+
+
+router.get('/shortlink/:type/:data',async function(ctx){
+  // ctx.cookies.set('a', '100')
+  // // 获取cookie(结构化koa2已经做好)
+  // console.log('cookie is', ctx.cookies.get('a'))
+ shortlink(ctx,ctx.params,ctx.cookies)
+})
+
+
 
 router.get('/banner/list', async function (ctx, next) {
   const { type } = ctx.request.query;
