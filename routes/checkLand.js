@@ -157,12 +157,8 @@ router.post('/register', async function (ctx, next) {
 
 
     if (!errText) {
-        let sqlstr = `INSERT INTO user ( username, password,mobile , register_ip)VALUES(
-            "${nick}",
-            "${pwd}",
-           "${mobile}",
-            "${ctx.ip}")`;
-        let sqlRes = await sql.promiseCall(sqlstr);
+        let sqlstr = `INSERT INTO user ( username, password,mobile , register_ip)VALUES(?,?,?,?)`;
+        let sqlRes = await sql.promiseCall({sql:sqlstr,values:[nick,pwd,mobile,ctx.ip]});
         if (!sqlRes.error && sqlRes.results.insertId) {
             insertId = sqlRes.results.insertId;
         } else {

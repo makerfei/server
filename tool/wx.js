@@ -5,8 +5,9 @@ var https = require("https");
 var http = require("http");
 var axios = require("axios");
 var crypto = require("crypto");
-var mysql = require("mysql");
-const wxConfig = require('../config/wx')
+const wxConfig = require('../config/wx');
+const { promises } = require("dns");
+const sql = require('../tool/sqlConfig')
 const pay = (req, res) => {
 
     let time = new Date().getTime();
@@ -178,16 +179,57 @@ function createTimeStamp() {
 }
 
 
-//获取微信的基本信息
-module.exports.getWxInfo = () => {
+module.exports.wxLoginOrLogon = async function({wxInfo,userInfo}){
+    return new Promise(async (res, inj) => {
+        let token ='';
+        let errText = ''
+        //检验是否注册过
+        let idRes = await sql.promiseCall({ sql: `select id  from user where weixin_openid = ?`, values: [wxInfo.openid] });
+        if(!idRes.error&&idRes.results.length>0){
+            token = idRes.results[0].id
+        }
+        //进行注册
 
+        if(!errText&&!token&&userInfo.openid){
+            let sqlstr = `INSERT INTO user ( weixin_openid,username, gender,avatar , city,province)VALUES
+            (?,?,?,?,?,?)`;
+            let sqlRes = await sql.promiseCall({sql:sqlstr,values:[userInfo.openid,userInfo.nickname,userInfo.sex,userInfo.headimgurl,userInfo.city,userInfo.province]});
+            if (!sqlRes.error && sqlRes.results.insertId) {
+                token = sqlRes.results.insertId;
+            } else {
+                errText = sqlRes.error.message
+            }
+            await sql.promiseCall({ sql: `INSERT INTO level(user_id) VALUES(?)`, values: [token] });
+            await sql.promiseCall({ sql: `INSERT INTO amount(user_id) VALUES(?)`, values: [token] });
+
+        }
+        
+        
+        res(token)
+    })
+   
+   
 }
 
 
 //获取微信的基本信息
-module.exports.snsapi_baseInfo = (code = '') => {
+module.exports.snsapi_userinfo = (openid) => {
     return axios({
-        type: '',
+        url: "https://api.weixin.qq.com/sns/userinfo",
+        params: {
+            access_token:  global.access_token,
+            openid: openid,
+            lang: 'zh_CN'
+        }
+    }).then(res => {
+        return res.data;
+    })
+}
+
+
+//获取微信的基本信息
+module.exports.baseInfo = (code = '',state='') => {
+    return axios({
         url: "https://api.weixin.qq.com/sns/oauth2/access_token",
         params: {
             grant_type: 'authorization_code',
@@ -198,13 +240,15 @@ module.exports.snsapi_baseInfo = (code = '') => {
 
         }
     }).then(res => {
+        if(res.data.access_token){
+            global.access_token = res.data.access_token
+        }
         return res.data;
     })
 }
 //获取 getAccessToken 
 module.exports.getAccessToken = () => {
     return axios({
-        type: '',
         url: "https://api.weixin.qq.com/cgi-bin/token",
         params: {
             grant_type: "client_credential",
@@ -213,7 +257,10 @@ module.exports.getAccessToken = () => {
 
         }
     }).then(res => {
-        global.access_token = res.data.access_token
+        if(res.data.access_token){
+            global.access_token = res.data.access_token
+        }
+       
 
         //ctx中的全局变量
         // ctx.state.__HOST__ = '//'
