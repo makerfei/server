@@ -1,7 +1,7 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
 router.prefix('/api/wx')
-const { baseInfo ,snsapi_userinfo,wxLoginOrLogon} = require('../tool/wx')
+const { baseInfo ,snsapi_userinfo,wxLoginOrLogon,notify_url} = require('../tool/wx')
 
 
 router.get('/wxLogin', async function (ctx, next) {
@@ -23,6 +23,15 @@ router.get('/wxLogin', async function (ctx, next) {
   
     ctx.body = { code:0,data:{wxInfo,userInfo,token}  }
 })
+
+router.get('/wxCallBack', async function (ctx, next) {
+   
+    
+    ctx.body = { code:0,data:{}  }
+})
+
+
+
 
 
 module.exports = router

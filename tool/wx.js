@@ -1,29 +1,23 @@
 
 var xml2js = require("xml2js");
 var qs = require("querystring");
-var https = require("https");
-var http = require("http");
+
 var axios = require("axios");
 var crypto = require("crypto");
 const wxConfig = require('../config/wx');
 const { promises } = require("dns");
 const sql = require('../tool/sqlConfig')
-const pay = (req, res) => {
 
-    let time = new Date().getTime();
-    var total_fee, attach, openid, body, bookingNo;
-    let postData = req.body;
+
+
+module.exports.wxPay = (data) => {
+    let { total_fee, openid, body, bookingNo,create_ip } = data
     var apiUrl = "https://api.mch.weixin.qq.com/pay/unifiedorder";
-    total_fee = 100;
-    openid = postData.openid;
-    body = '商品详情-支付';
-    bookingNo = time;
+    var notify_url = wxConfig.notify_url
 
     var timeStamp = createTimeStamp(); //时间节点
     var nonce_str = createNonceStr() + createTimeStamp(); //随机字符串
-    var create_ip = get_client_ip(req); //请求ip
-    var notify_url = 'https://tqmsq.7dar.com/notifypay';
-
+    //var create_ip = get_client_ip(req); //请求ip
     var formData = "<xml>";
     formData += "<appid>" + wxConfig['appid'] + "</appid>"; //appid
     formData += "<mch_id>" + wxConfig['mch_id'] + "</mch_id>"; //商户号
@@ -39,11 +33,12 @@ const pay = (req, res) => {
     formData += "</xml>";
     console.log(formData);
 
-    axios({
+    return axios({
         url: apiUrl,
         method: 'POST',
         body: formData
     }, function (err, response, body) {
+        
         if (!err && response.statusCode === 200) {
             console.log('成功', body);
             var result_code = getXMLNodeValue('result_code', body.toString("utf-8"));
@@ -53,30 +48,28 @@ const pay = (req, res) => {
                 console.log('prepay_id', prepay_id)
                 //签名
                 var _paySignjs = paysignjs(wxConfig['appid'], nonce_str, 'prepay_id=' + prepay_id, 'MD5', timeStamp);
-                var args = {
-                    appId: wxConfig['appid'],
-                    timeStamp: timeStamp,
-                    nonceStr: nonce_str,
-                    signType: "MD5",
-                    package: prepay_id,
-                    paySign: _paySignjs,
-                    status: 200
+                return {
+                    code: 0,
+                    data: {
+                        appId: wxConfig['appid'],
+                        timeStamp: timeStamp,
+                        nonceStr: nonce_str,
+                        signType: "MD5",
+                        package: prepay_id,
+                        paySign: _paySignjs,
+                        status: 200
+                    }
+
                 };
-                return res.send({
-                    status: 0,
-                    message: '获取成功',
-                    data: args
-                })
-                res.end();
+
             } else {                         //失败
                 var err_code_des = getXMLNodeValue('err_code_des', body.toString("utf-8"));
                 var errDes = err_code_des.split('[')[2].split(']')[0];
-                var errArg = {
-                    status: 400,
-                    errMsg: errDes
+                return {
+                    code: -1,
+                    msg: errDes
+
                 };
-                res.write(JSON.stringify(errArg));
-                res.end();
             }
             console.log('prepay_id是' + resultCode)
         }
@@ -157,7 +150,7 @@ function getXMLNodeValue(node_name, xml) {
     return _tmp[0];
 }
 //获取url请求客户端ip
-var get_client_ip = function (req) {
+module.exports.get_client_ip = function (req) {
     var ip = req.headers['x-forwarded-for'] ||
         req.ip ||
         req.connection.remoteAddress ||
@@ -179,21 +172,21 @@ function createTimeStamp() {
 }
 
 
-module.exports.wxLoginOrLogon = async function({wxInfo,userInfo}){
+module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo }) {
     return new Promise(async (res, inj) => {
-        let token ='';
+        let token = '';
         let errText = ''
         //检验是否注册过
         let idRes = await sql.promiseCall({ sql: `select id  from user where weixin_openid = ?`, values: [wxInfo.openid] });
-        if(!idRes.error&&idRes.results.length>0){
+        if (!idRes.error && idRes.results.length > 0) {
             token = idRes.results[0].id
         }
         //进行注册
 
-        if(!errText&&!token&&userInfo.openid){
+        if (!errText && !token && userInfo.openid) {
             let sqlstr = `INSERT INTO user ( weixin_openid,username, gender,avatar , city,province)VALUES
             (?,?,?,?,?,?)`;
-            let sqlRes = await sql.promiseCall({sql:sqlstr,values:[userInfo.openid,userInfo.nickname,userInfo.sex,userInfo.headimgurl,userInfo.city,userInfo.province]});
+            let sqlRes = await sql.promiseCall({ sql: sqlstr, values: [userInfo.openid, userInfo.nickname, userInfo.sex, userInfo.headimgurl, userInfo.city, userInfo.province] });
             if (!sqlRes.error && sqlRes.results.insertId) {
                 token = sqlRes.results.insertId;
             } else {
@@ -203,12 +196,12 @@ module.exports.wxLoginOrLogon = async function({wxInfo,userInfo}){
             await sql.promiseCall({ sql: `INSERT INTO amount(user_id) VALUES(?)`, values: [token] });
 
         }
-        
-        
+
+
         res(token)
     })
-   
-   
+
+
 }
 
 
@@ -217,7 +210,7 @@ module.exports.snsapi_userinfo = (openid) => {
     return axios({
         url: "https://api.weixin.qq.com/sns/userinfo",
         params: {
-            access_token:  global.access_token,
+            access_token: global.access_token,
             openid: openid,
             lang: 'zh_CN'
         }
@@ -228,7 +221,7 @@ module.exports.snsapi_userinfo = (openid) => {
 
 
 //获取微信的基本信息
-module.exports.baseInfo = (code = '',state='') => {
+module.exports.baseInfo = (code = '', state = '') => {
     return axios({
         url: "https://api.weixin.qq.com/sns/oauth2/access_token",
         params: {
@@ -240,7 +233,7 @@ module.exports.baseInfo = (code = '',state='') => {
 
         }
     }).then(res => {
-        if(res.data.access_token){
+        if (res.data.access_token) {
             global.access_token = res.data.access_token
         }
         return res.data;
@@ -257,10 +250,10 @@ module.exports.getAccessToken = () => {
 
         }
     }).then(res => {
-        if(res.data.access_token){
+        if (res.data.access_token) {
             global.access_token = res.data.access_token
         }
-       
+
 
         //ctx中的全局变量
         // ctx.state.__HOST__ = '//'

@@ -3,7 +3,7 @@ const sql = require('../tool/sqlConfig')
 const logisticsApi = require('../tool/logisticsApi')
 router.prefix('/api/order')
 const moment = require('moment');
-
+const { wxPay, get_client_ip } = require('../tool/wx')
 //获取状态文字
 let getStatusTxt = function (status) {
   let resTxt = ''
@@ -89,7 +89,7 @@ router.post('/create', async function (ctx, next) {
       if (!goodsDateSql.error) {
         goodsList[i] = { ...goodsList[i], ...goodsDateSql?.results?.[0], property: '' }
         let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);
-          console.log(delNumber)
+        console.log(delNumber)
         if (delNumber >= 0) {
           let jiansql = await sql.promiseCall({ sql: `update goods set  stores = ${delNumber}   where id =?`, values: [goodsDateSql?.results?.[0]?.goodsId] });
         } else {
@@ -361,9 +361,30 @@ router.post('/close', async function (ctx, next) {
   }
   ctx.body = { "code": !errText ? 0 : -1, "msg": errText || "success" }
 
- 
+
 })
 
+
+
+//进行付款 生成微信支付
+router.all('/wxPay', async function (ctx, next) {
+  const userId = ctx.session.userId;
+  const { orderId} = ctx.request.query;
+  let userInfo = {}
+  let ordernfo = {}
+  let create_ip = get_client_ip(ctx.req)
+
+  let userSql = await sql.promiseCall({ sql: `select weixin_openid  from user where id=?`, values: [userId] })
+  let orderitemSql = await sql.promiseCall({ sql: `select *  from orderinfo where id=?`, values: [orderId] })
+
+  if (!orderitemSql.error && !userSql.error && orderitemSql.results.length > 0 && userSql.results.length > 0) {
+    userInfo = userSql.results[0];
+    ordernfo = orderitemSql.results[0];
+  }
+
+  ctx.body = await wxPay({ total_fee:ordernfo.amount, openid:userInfo.weixin_openid, body:'街道购物商品', bookingNo:orderitemSql.orderNumber, create_ip})
+
+})
 
 //进行付款
 router.post('/pay', async function (ctx, next) {
@@ -374,9 +395,6 @@ router.post('/pay', async function (ctx, next) {
   let afterDelBalance = 0;
   let amountReal = 0;
   let orderNumber = 0;
-
-
-
   //查询订单
   let orderSql = await sql.promiseCall({ sql: `select amount ,orderNumber from orderinfo where id =?`, values: [orderId] })
   //查询余额
@@ -430,7 +448,7 @@ router.get('/statistics', async function (ctx, next) {
 
 //物流查询
 router.get('/logisticsApi', async function (ctx, next) {
-  ctx.body = await  logisticsApi(ctx.request.query)
+  ctx.body = await logisticsApi(ctx.request.query)
 })
 
 
