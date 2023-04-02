@@ -132,6 +132,7 @@ router.get('/amount', async function (ctx, next) {
   let amountsql = await sql.promiseCall({ sql: `select * from amount where user_id = '${ctx.session.userId}'`, values: [] });
   if (!amountsql.error && amountsql.results.length > 0) {
     resData = amountsql.results[0]
+   
   } else {
     errortxt = amountsql?.error?.message||'账户查询失败'
   }

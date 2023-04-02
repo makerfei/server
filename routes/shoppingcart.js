@@ -99,7 +99,12 @@ let getCartLit = function (userId) {
         if (!errText) {
             resolve({
                 code: 0, data: {
-                    items: cartList,
+                    items: cartList.map(item=>{
+                        return{
+                            ...item,
+                            price:Number(item.price/100).toFixed(2)
+                        }
+                    }),
                     number:totalNumber,
                     price:totalPrice,
 

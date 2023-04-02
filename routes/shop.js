@@ -11,15 +11,17 @@ router.post('/reputation/v2', async function (ctx, next) {
     let totalRow = 0;
     //查询条数
     if (!errText) {
-        let goodsSql = await sql.promiseCall({sql:`select a.*,b.username,b.mobile,b.avatar as avatarUrl  from reputations as a left join user as b on a.userId = b.id where a.goodsId = ${goodsId} ORDER BY id desc
-        LIMIT ${(page - 1) * pageSize},${pageSize} `,values:[]});
+        let goodsSql = await sql.promiseCall({
+            sql: `select a.*,b.username,b.mobile,b.avatar as avatarUrl  from reputations as a left join user as b on a.userId = b.id where a.goodsId = ${goodsId} ORDER BY id desc
+        LIMIT ${(page - 1) * pageSize},${pageSize} `, values: []
+        });
         if (!goodsSql.error) {
             goodsSql.results.map(item => {
-                let { reputation, remark, avatarUrl, mobile, username ,id,dateAdd} = item
+                let { reputation, remark, avatarUrl, mobile, username, id, dateAdd } = item
                 goodsList.push(
                     {
-                        goods: {dateReputation:dateAdd, goodReputationStr:reputation, goodReputationRemark:remark, uid:id},
-                        user: { avatarUrl, mobile, username,uid:id }
+                        goods: { dateReputation: dateAdd, goodReputationStr: reputation, goodReputationRemark: remark, uid: id },
+                        user: { avatarUrl, mobile, username, uid: id }
                     }
                 )
             })
@@ -30,7 +32,7 @@ router.post('/reputation/v2', async function (ctx, next) {
 
     //查询数量
     if (!errText) {
-        let goodsSql = await sql.promiseCall({sql:`select count(*) as count from reputations where goodsId = ${goodsId}`,values:[]});
+        let goodsSql = await sql.promiseCall({ sql: `select count(*) as count from reputations where goodsId = ${goodsId}`, values: [] });
         if (!goodsSql.error) {
             totalRow = goodsSql.results[0].count
         } else {
@@ -57,7 +59,7 @@ router.post('/reputation/v2', async function (ctx, next) {
 
 //获取商品类目
 router.get('/category/all', async function (ctx, next) {
-    let categorySql = await sql.promiseCall({sql:`select * from category where isUse = 1 ORDER BY paixu ASC`,values:[]});
+    let categorySql = await sql.promiseCall({ sql: `select * from category where isUse = 1 ORDER BY paixu ASC`, values: [] });
     if (!categorySql.error) {
         ctx.body = { "code": 0, "data": categorySql.results, "msg": "success" }
     } else {
@@ -77,7 +79,7 @@ router.post('/list/v2', async function (ctx, next) {
         whereSqlTxt += ` and  categoryId = ${categoryId} `
     }
 
-    let goodsCountSql = await sql.promiseCall({sql:`select count(*) as count from goods  ${whereSqlTxt} `,values:[]});
+    let goodsCountSql = await sql.promiseCall({ sql: `select count(*) as count from goods  ${whereSqlTxt} `, values: [] });
     if (!goodsCountSql.error) {
         resCount = goodsCountSql?.results?.[0]?.count || 0
     } else {
@@ -85,9 +87,15 @@ router.post('/list/v2', async function (ctx, next) {
     }
 
     if (!errortxt) {
-        let goodsSql = await sql.promiseCall({sql:`select  id,pic ,name,originalPrice, minPrice,recommendStatus   from goods  ${whereSqlTxt} ORDER BY recommendStatus DESC   LIMIT ${(page - 1) * pageSize},${pageSize} `,values:[]});
+        let goodsSql = await sql.promiseCall({ sql: `select  id,pic ,name,originalPrice, minPrice,recommendStatus   from goods  ${whereSqlTxt} ORDER BY recommendStatus DESC   LIMIT ${(page - 1) * pageSize},${pageSize} `, values: [] });
         if (!goodsSql.error) {
-            resList = goodsSql?.results || []
+            resList = (goodsSql?.results || []).map(item => {
+                return {
+                    ...item,
+                    minPrice: Number(item.minPrice / 100).toFixed(2),
+                    originalPrice: Number(item.originalPrice / 100).toFixed(2)
+                }
+            })
         } else {
             errortxt = goodsSql.error.message
         }
@@ -117,13 +125,18 @@ router.get('/detail', async function (ctx, next) {
     }
 
     if (!errortxt) {
-        let goodsSql = await sql.promiseCall({sql:`select *  from goods where id = ${id}`,values:[]});
+        let goodsSql = await sql.promiseCall({ sql: `select *  from goods where id = ${id}`, values: [] });
         if (!goodsSql.error) {
             if (goodsSql?.results.length > 0) {
                 goodsCon.basicInfo = goodsSql?.results[0];
+                goodsCon.basicInfo = {
+                    ...goodsCon.basicInfo,
+                    minPrice: Number(goodsCon.basicInfo.minPrice / 100).toFixed(2),
+                    originalPrice: Number(goodsCon.basicInfo.originalPrice / 100).toFixed(2)
+                }
                 goodsCon.content = goodsCon.basicInfo.content;
                 goodsCon.basicInfo.content = undefined;
-                goodsCon.basicInfo.statusStr = goodsCon.basicInfo.status===1?'商品已下架':''
+                goodsCon.basicInfo.statusStr = goodsCon.basicInfo.status === 1 ? '商品已下架' : ''
                 categoryPid = goodsCon.basicInfo.categoryId
                 //物流信息
                 goodsCon.logistics = {
@@ -142,7 +155,7 @@ router.get('/detail', async function (ctx, next) {
 
     //分类信息获取
     if (!errortxt && categoryPid) {
-        let categorySql = await sql.promiseCall({sql:`select * from category where pid = ${categoryPid} LIMIT 0,1`,values:[]});
+        let categorySql = await sql.promiseCall({ sql: `select * from category where pid = ${categoryPid} LIMIT 0,1`, values: [] });
         if (!categorySql.error) {
             goodsCon.category = categorySql.results.length > 0 ? categorySql.results[0] : {}
         } else {
@@ -152,11 +165,10 @@ router.get('/detail', async function (ctx, next) {
 
     //获取图片信息
     if (!errortxt) {
-        let picsSql = await sql.promiseCall({sql:`select * from pics where goodsId = ${id}`,values:[]});
+        let picsSql = await sql.promiseCall({ sql: `select * from pics where goodsId = ${id}`, values: [] });
         if (!picsSql.error) {
-            goodsCon.pics = picsSql.results.length > 0 ? picsSql.results : []
-
-            goodsCon.pics2 = goodsCon.pics.map((item) => item.pic)
+            goodsCon.pics = [{pic:goodsCon.basicInfo.pic},...picsSql.results]
+            goodsCon.pics2 =goodsCon.pics.map((item) => item.pic)
         } else {
             errortxt = picsSql.error.message
         }
@@ -165,10 +177,15 @@ router.get('/detail', async function (ctx, next) {
 
     //获取sku
     if (!errortxt) {
-        let skuliatSql = await sql.promiseCall({sql:`select * from skuList where goodsId = ${id}`,values:[]});
+        let skuliatSql = await sql.promiseCall({ sql: `select * from skuList where goodsId = ${id}`, values: [] });
         if (!skuliatSql.error) {
-            goodsCon.skuList = skuliatSql.results.map(item=>{
-                return {...item,propertyChildIds:item.propertyChildIds+','}
+            goodsCon.skuList = skuliatSql.results.map(item => {
+                return { ...item, 
+                    propertyChildIds: item.propertyChildIds + ',',
+                    originalPrice: Number(item.originalPrice / 100).toFixed(2),
+                    price: Number(item.price / 100).toFixed(2),
+                
+                }
             })
         } else {
             errortxt = skuliatSql.error.message
@@ -184,14 +201,14 @@ router.get('/detail', async function (ctx, next) {
             if (properties) {
                 let propertiesItem = {};
 
-                let propertiesSql = await sql.promiseCall({sql:`select * from properties where id = ${properties} LIMIT 0,1`,values:[]});
+                let propertiesSql = await sql.promiseCall({ sql: `select * from properties where id = ${properties} LIMIT 0,1`, values: [] });
                 if (!propertiesSql.error) {
                     propertiesItem = propertiesSql.results.length > 0 ? propertiesSql.results[0] : {}
                 } else {
                     errortxt = propertiesSql.error.message
                 }
 
-                let childsCurGoodsSql = await sql.promiseCall({sql:`select * from childsCurGoods where propertyId = ${properties}`,values:[]});
+                let childsCurGoodsSql = await sql.promiseCall({ sql: `select * from childsCurGoods where propertyId = ${properties}`, values: [] });
                 if (!childsCurGoodsSql.error) {
                     propertiesItem.childsCurGoods = childsCurGoodsSql.results;
                 } else {
