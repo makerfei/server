@@ -170,8 +170,12 @@ router.post('/register', async function (ctx, next) {
 })
 const adminIndex = (app) => {
     app.use(async (ctx, next) => {
+        
         let userId = ctx.request.body.token || ctx.request.query.token || '';
-        ctx.session.userId =Number(userId) ;
+        if(userId){
+            console.log(userId)
+            ctx.session.userId =Number(userId);
+        }
         let needLand = true
         if ((ctx.originalUrl.indexOf('/api/user') === 0 ||
             ctx.originalUrl.indexOf('/api/admin') === 0 ||
