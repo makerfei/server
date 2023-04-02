@@ -10,10 +10,10 @@ router.get('/wxLogin', async function (ctx, next) {
     let userInfo ={}
     let wxInfo = await baseInfo(code);
     let ip =get_client_ip(ctx.req)
-    if (wxInfo.openid) {
-        let now = new Date().getTime()
-        ctx.cookies.set('wxOpenid', wxInfo.openid, { expires:   new     Date(now + 100 * 24 * 60 * 60 * 1000)  })
-    }
+    // if (wxInfo.openid) {
+    //     let now = new Date().getTime()
+    //     ctx.cookies.set('wxOpenid', wxInfo.openid, { expires:   new     Date(now + 100 * 24 * 60 * 60 * 1000)  })
+    // }
     if(wxInfo.scope==='snsapi_userinfo'){
         userInfo =await snsapi_userinfo(wxInfo.openid,wxInfo.access_token);
     }

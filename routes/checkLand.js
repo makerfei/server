@@ -93,24 +93,7 @@ router.post('/loginMobile', async function (ctx, next) {
     }
 })
 
-router.get('/wxLogin', async function (ctx, next) {
-    const { code, state } = ctx.request.query;
-    let token = ''
-    let userInfo = {}
-    let wxInfo = await baseInfo(code);
-    if (wxInfo.openid) {
-        let now = new Date().getTime()
-    }
-    if (wxInfo.scope === 'snsapi_userinfo') {
-        userInfo = await snsapi_userinfo(wxInfo.openid, wxInfo.access_token);
-    }
-    if (wxInfo.openid) {
-        token = await wxLoginOrLogon({ wxInfo, userInfo })
-        if (token) ctx.session.userId = token;
-    }
 
-    ctx.body = { code: 0, data: { wxInfo, userInfo, token } }
-})
 
 //判断图形验证码是否正确
 router.get('/verification/sms/get', async function (ctx, next) {
