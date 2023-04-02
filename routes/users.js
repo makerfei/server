@@ -133,7 +133,7 @@ router.get('/amount', async function (ctx, next) {
   if (!amountsql.error && amountsql.results.length > 0) {
     resData = amountsql.results[0]
   } else {
-    errortxt = amountsql.error.message
+    errortxt = amountsql?.error?.message||'账户查询失败'
   }
   if (!errortxt) {
     ctx.body = { "code": 0, "msg": "success", data: resData }

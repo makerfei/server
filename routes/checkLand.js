@@ -174,7 +174,7 @@ router.post('/register', async function (ctx, next) {
     }
     if (!errText) {
         //进行注册初始化
-        insertId = await userInster({ mobile: mobile, register_ip: get_client_ip(ctx.req), password: pwd, username: username })
+        insertId = await userInster({ mobile: mobile, register_ip: get_client_ip(ctx.req), password: pwd, username: nick })
         if(!insertId){
             errText = "注册失败"
         }
@@ -188,7 +188,7 @@ router.post('/register', async function (ctx, next) {
 const adminIndex = (app) => {
     app.use(async (ctx, next) => {
         let userId = ctx.request.body.token || ctx.request.query.token || '';
-        ctx.session.userId = userId;
+        ctx.session.userId =Number(userId) ;
         let needLand = true
         if ((ctx.originalUrl.indexOf('/api/user') === 0 ||
             ctx.originalUrl.indexOf('/api/admin') === 0 ||

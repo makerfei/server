@@ -14,7 +14,7 @@ CREATE TABLE `address` (
   `isDefault` tinyint(1) NOT NULL DEFAULT '0',
   `cityId` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'amount'
 CREATE TABLE `amount` (
@@ -32,7 +32,7 @@ CREATE TABLE `amount` (
   `totalWithdraw` int(11) NOT NULL DEFAULT '0',
   `totleConsumed` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'banner'
 CREATE TABLE `banner` (
@@ -45,6 +45,18 @@ CREATE TABLE `banner` (
   `type` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+
+-- Create syntax for TABLE 'cashlog'
+CREATE TABLE `cashlog` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `dateAdd` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `behavior` int(11) NOT NULL DEFAULT '0',
+  `freeze` int(11) NOT NULL DEFAULT '0',
+  `orderNumber` varchar(50) NOT NULL DEFAULT '0',
+  `type` int(11) NOT NULL DEFAULT '0',
+  `userId` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'category'
 CREATE TABLE `category` (
@@ -100,7 +112,7 @@ CREATE TABLE `level` (
   `upgradeScore` int(11) NOT NULL DEFAULT '0',
   `upgradeSendScore` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'logistics'
 CREATE TABLE `logistics` (
@@ -113,8 +125,10 @@ CREATE TABLE `logistics` (
   `status` int(11) NOT NULL DEFAULT '0',
   `orderId` int(11) NOT NULL DEFAULT '0',
   `cityId` varchar(255) NOT NULL DEFAULT '',
+  `trackingNumber` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
+  `shipperName` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'logs'
 CREATE TABLE `logs` (
@@ -136,8 +150,11 @@ CREATE TABLE `orderinfo` (
   `isNeedLogistics` tinyint(1) NOT NULL DEFAULT '0',
   `closeMinute` int(11) NOT NULL DEFAULT '60',
   `userId` int(11) NOT NULL DEFAULT '0',
+  `isPay` tinyint(1) NOT NULL DEFAULT '0',
+  `amountLogistics` int(11) NOT NULL DEFAULT '0',
+  `balanceSwitch` varchar(10) CHARACTER SET utf8 NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=125 DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'orderitem'
 CREATE TABLE `orderitem` (
@@ -151,7 +168,7 @@ CREATE TABLE `orderitem` (
   `goodsName` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `pic` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=114 DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'pics'
 CREATE TABLE `pics` (
@@ -178,7 +195,7 @@ CREATE TABLE `reputations` (
   `remark` varchar(255) CHARACTER SET utf8 NOT NULL,
   `dateAdd` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1;
 
 -- Create syntax for TABLE 'shoppingcart'
 CREATE TABLE `shoppingcart` (
@@ -188,7 +205,15 @@ CREATE TABLE `shoppingcart` (
   `sku` varchar(255) CHARACTER SET utf8 DEFAULT '',
   `userId` int(11) DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=latin1;
+
+-- Create syntax for TABLE 'shortlink'
+CREATE TABLE `shortlink` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `key` varchar(255) NOT NULL,
+  `link` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Create syntax for TABLE 'skulist'
 CREATE TABLE `skulist` (
@@ -214,12 +239,13 @@ CREATE TABLE `user` (
   `last_login_time` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `last_login_ip` varchar(255) NOT NULL DEFAULT '',
   `nickname` varchar(60) NOT NULL DEFAULT '',
-  `mobile` varchar(20) NOT NULL,
+  `mobile` varchar(20) NOT NULL DEFAULT '',
   `register_ip` varchar(255) NOT NULL DEFAULT '',
   `avatar` varchar(255) NOT NULL DEFAULT '',
   `weixin_openid` varchar(50) NOT NULL DEFAULT '',
   `province` varchar(50) NOT NULL DEFAULT '',
   `city` varchar(50) NOT NULL DEFAULT '',
+  `type` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_name` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4;
