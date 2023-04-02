@@ -5,7 +5,8 @@ const moment = require('moment');
 router.prefix('/api')
 
 const sms = require('../tool/sms')
-
+const { loginPoint, userInster } = require('../tool/loginOrLogon')
+const { get_client_ip } = require('../tool/wx')
 
 
 //后端登录
@@ -16,13 +17,11 @@ router.post('/loginAdmin', async function (ctx, next) {
     if (res.results && res.results.length > 0) {
 
         if (res.results[0].type > 0) {
-            ctx.session.userId = res.results[0].id;
-            ctx.session.userType = res.results[0].type;
-            let sqllogin = await sql.promiseCall({ sql: `update user set last_login_ip = '${ctx.ip}' ,last_login_time = '${moment(new Date()).format('YYYY-MM-DD HH:mm:ss')}'  where id =?`, values: [res.results[0].id] });
+            let sqllogin = await sql.promiseCall({ sql: `update user set last_login_ip = '${get_client_ip(ctx.req)}' ,last_login_time = '${moment(new Date()).format('YYYY-MM-DD HH:mm:ss')}'  where id =?`, values: [res.results[0].id] });
         } else {
             errText = '权限不够'
         }
-    }else{
+    } else {
         errText = '账号密码错误'
     }
 
@@ -37,7 +36,7 @@ router.post('/loginAdmin', async function (ctx, next) {
             status: 'error',
             type,
             currentAuthority: 'guest',
-            message:errText
+            message: errText
         }
     }
 })
@@ -48,8 +47,8 @@ router.post('/login', async function (ctx, next) {
     const { mobile, deviceId, deviceName, pwd, token } = ctx?.request?.body;
     let res = await sql.promiseCall({ sql: `select id from user where password = ? and mobile = ?`, values: [pwd, mobile] });
     if (res.results && res.results.length > 0) {
-        ctx.session.userId = res.results[0].id;
-        let sqllogin = await sql.promiseCall({ sql: `update user set last_login_ip = '${ctx.ip}' ,last_login_time = '${moment(new Date()).format('YYYY-MM-DD HH:mm:ss')}'  where id =?`, values: [res.results[0].id] });
+        //登录更新最后登录时间
+        await loginPoint({ ip: get_client_ip(ctx.req), userId: res.results[0].id })
         ctx.body = {
             code: 0,
             "data": { "token": res.results[0].id, "uid": res.results[0].id },
@@ -72,14 +71,18 @@ router.post('/loginMobile', async function (ctx, next) {
     if (!errText) {
         let res = await sql.promiseCall({ sql: `select id from user where  mobile = ?`, values: [mobile] })
         if (!res.error && res.results.length > 0) {
-            let sqllogin = await sql.promiseCall({ sql: `update user set last_login_ip = ? ,last_login_time ='${moment(new Date()).format('YYYY-MM-DD HH:mm:ss')}'  where id =?`, values: [ctx.ip, res.results[0].id] });
+            //登录更新最后登录时间
+            await loginPoint({ ip: get_client_ip(ctx.req), userId: res.results[0].id })
             insertId = res.results[0].id;
         } else {
-            errText = "请先注册！"
+            //进行注册初始化
+            insertId = await userInster({ mobile: mobile, register_ip: get_client_ip(ctx.req) })
+            if (!insertId) {
+                errText = "登录失败"
+            }
         }
     }
     if (!errText) {
-        ctx.session.userId = insertId;
         ctx.body = {
             code: 0,
             "data": { "token": insertId, "uid": insertId },
@@ -90,6 +93,24 @@ router.post('/loginMobile', async function (ctx, next) {
     }
 })
 
+router.get('/wxLogin', async function (ctx, next) {
+    const { code, state } = ctx.request.query;
+    let token = ''
+    let userInfo = {}
+    let wxInfo = await baseInfo(code);
+    if (wxInfo.openid) {
+        let now = new Date().getTime()
+    }
+    if (wxInfo.scope === 'snsapi_userinfo') {
+        userInfo = await snsapi_userinfo(wxInfo.openid, wxInfo.access_token);
+    }
+    if (wxInfo.openid) {
+        token = await wxLoginOrLogon({ wxInfo, userInfo })
+        if (token) ctx.session.userId = token;
+    }
+
+    ctx.body = { code: 0, data: { wxInfo, userInfo, token } }
+})
 
 //判断图形验证码是否正确
 router.get('/verification/sms/get', async function (ctx, next) {
@@ -101,11 +122,11 @@ router.get('/verification/sms/get', async function (ctx, next) {
     }
     //发送验证码
     if (!errtxt) {
-        let mathCode = Number(Math.random()*8999+1000).toFixed(0);
+        let mathCode = Number(Math.random() * 8999 + 1000).toFixed(0);
         ctx.session.imgCodeMobile = mobile;
         ctx.session.RegisterSMSVerificationCode = mathCode;
         //进行短信发送
-        sms(mobile,mathCode);
+        sms(mobile, mathCode);
 
     }
     if (!errtxt) {
@@ -135,8 +156,6 @@ router.get('/verification/pic/get', async function (ctx, next) {
 
 })
 
-
-
 //注册
 router.post('/register', async function (ctx, next) {
     let errText = '';
@@ -146,7 +165,6 @@ router.post('/register', async function (ctx, next) {
     if (ctx.session.RegisterSMSVerificationCode !== code || ctx.session.imgCodeMobile !== mobile) {
         errText = "短信验证码错误"
     }
-
     //判断电话是否被注册
     if (!errText) {
         let count = await sql.promiseCall({ sql: `select count(*) as res from user where mobile = ?`, values: [mobile] });
@@ -154,52 +172,30 @@ router.post('/register', async function (ctx, next) {
             errText = "手机号已被注册！"
         }
     }
-
-
     if (!errText) {
-        let sqlstr = `INSERT INTO user ( username, password,mobile , register_ip)VALUES(?,?,?,?)`;
-        let sqlRes = await sql.promiseCall({sql:sqlstr,values:[nick,pwd,mobile,ctx.ip]});
-        if (!sqlRes.error && sqlRes.results.insertId) {
-            insertId = sqlRes.results.insertId;
-        } else {
-            errText = sqlRes.error.message
+        //进行注册初始化
+        insertId = await userInster({ mobile: mobile, register_ip: get_client_ip(ctx.req), password: pwd, username: username })
+        if(!insertId){
+            errText = "注册失败"
         }
     }
-
     if (!errText) {
-        let Sqllevel = await sql.promiseCall({ sql: `INSERT INTO level(user_id) VALUES(?)`, values: [insertId] });
-        if (Sqllevel.error) {
-            errText = Sqllevel.error.message
-        }
-    }
-
-    if (!errText) {
-        let Sqlamount = await sql.promiseCall({ sql: `INSERT INTO amount(user_id) VALUES(?)`, values: [insertId] });
-        if (Sqlamount.error) {
-            errText = Sqlamount.error.message
-        }
-    }
-
-    if (!errText) {
-        ctx.session.userId = insertId;
         ctx.body = { "code": 0, "data": { "token": insertId, "uid": insertId }, "msg": "success" }
     } else {
         ctx.body = { "code": -1, "msg": errText }
     }
-
 })
-
-
-
 const adminIndex = (app) => {
     app.use(async (ctx, next) => {
+        let userId = ctx.request.body.token || ctx.request.query.token || '';
+        ctx.session.userId = userId;
         let needLand = true
         if ((ctx.originalUrl.indexOf('/api/user') === 0 ||
             ctx.originalUrl.indexOf('/api/admin') === 0 ||
             ctx.originalUrl.indexOf('/api/dfs') === 0 ||
             ctx.originalUrl.indexOf('/api/shopping-cart') === 0 ||
             ctx.originalUrl.indexOf('/api/order') === 0)
-            && !ctx.session.userId) {
+            && !userId) {
             needLand = true;
         } else {
             needLand = false;

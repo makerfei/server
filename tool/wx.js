@@ -5,6 +5,7 @@
 var axios = require("axios");
 const wxConfig = require('../config/wx');
 const sql = require('../tool/sqlConfig')
+const { loginPoint, userInster } = require('../tool/loginOrLogon')
 const fs = require('fs')
 
 const WxPay = require('wechatpay-node-v3')
@@ -36,16 +37,16 @@ function createTimeStamp() {
 
 //微信支付jsapi下单
 module.exports.jsApicCeateOrder = async function (data) {
-    const { total_fee,openid, body, bookingNo, create_ip } = data
+    const { total_fee, openid, body, bookingNo, create_ip } = data
     const pay = new WxPay({
         appid: wxConfig.appid,
         mchid: wxConfig.mch_id,
         // publicKey: fs.readFileSync('../config/apiclient_cert.pem'), // 公钥
         // privateKey: fs.readFileSync('../config/apiclient_key.pem'), // 秘钥
-    
+
         publicKey: fs.readFileSync('./config/apiclient_cert.pem'), // 公钥
         privateKey: fs.readFileSync('./config/apiclient_key.pem'), // 秘钥
-        key:wxConfig.APIv3
+        key: wxConfig.APIv3
     });
     let params = {
         "appid": wxConfig.appid,
@@ -54,47 +55,43 @@ module.exports.jsApicCeateOrder = async function (data) {
         "description": body,
         "notify_url": wxConfig.notify_url,
         "amount": {
-            "total": Number(total_fee) ,
+            "total": Number(total_fee),
             "currency": "CNY"
         },
         "payer": {
             "openid": openid
         },
         scene_info: {
-            payer_client_ip:create_ip,
-          },
+            payer_client_ip: create_ip,
+        },
     }
-   
-    return  pay.transactions_jsapi(params)
+
+    return pay.transactions_jsapi(params)
 },
 
 
 
 
-
-    module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo }) {
+    module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo, ip }) {
         return new Promise(async (res, inj) => {
             let token = '';
             let errText = ''
             //检验是否注册过
             let idRes = await sql.promiseCall({ sql: `select id  from user where weixin_openid = ?`, values: [wxInfo.openid] });
             if (!idRes.error && idRes.results.length > 0) {
-                token = idRes.results[0].id
+                token = idRes.results[0].id;
+                await loginPoint({ ip: ip, userId: token })
             }
             //进行注册
-
             if (!errText && !token && userInfo.openid) {
-                let sqlstr = `INSERT INTO user ( weixin_openid,username, gender,avatar , city,province)VALUES
-            (?,?,?,?,?,?)`;
-                let sqlRes = await sql.promiseCall({ sql: sqlstr, values: [userInfo.openid, userInfo.nickname, userInfo.sex, userInfo.headimgurl, userInfo.city, userInfo.province] });
-                if (!sqlRes.error && sqlRes.results.insertId) {
-                    token = sqlRes.results.insertId;
-                } else {
-                    errText = sqlRes.error.message
-                }
-                await sql.promiseCall({ sql: `INSERT INTO level(user_id) VALUES(?)`, values: [token] });
-                await sql.promiseCall({ sql: `INSERT INTO amount(user_id) VALUES(?)`, values: [token] });
-
+                let token = await userInster({
+                    username: userInfo.nickname,
+                    weixin_openid: userInfo.openid,
+                    gender: userInfo.sex,
+                    avatar: userInfo.headimgurl,
+                    city: userInfo.city,
+                    province: userInfo.province
+                })
             }
             res(token)
         })

@@ -35,8 +35,6 @@ app.use(logger())
 
 // logger
 app.use(async (ctx, next) => {
-  ctx.set('Token',"zhangfei") 
- 
   const start = new Date()
   await next()
   const ms = new Date() - start
@@ -47,6 +45,10 @@ app.use(views(__dirname + '/views', {
   extension: 'pug'
 }))
 app.use(require('koa-static')(__dirname + '/public'))
+
+
+
+
 
 const session_signed_key = ["some secret hurr"];  // 这个是配合signed属性的签名key
 const session_config = {
