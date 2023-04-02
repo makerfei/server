@@ -1,154 +1,16 @@
 
-var xml2js = require("xml2js");
-var qs = require("querystring");
+
+
 
 var axios = require("axios");
-var crypto = require("crypto");
 const wxConfig = require('../config/wx');
-const { promises } = require("dns");
 const sql = require('../tool/sqlConfig')
+const fs = require('fs')
+
+const WxPay = require('wechatpay-node-v3')
 
 
 
-module.exports.wxPay = (data) => {
-    let { total_fee, openid, body, bookingNo,create_ip } = data
-    var apiUrl = "https://api.mch.weixin.qq.com/pay/unifiedorder";
-    var notify_url = wxConfig.notify_url
-
-    var timeStamp = createTimeStamp(); //时间节点
-    var nonce_str = createNonceStr() + createTimeStamp(); //随机字符串
-    //var create_ip = get_client_ip(req); //请求ip
-    var formData = "<xml>";
-    formData += "<appid>" + wxConfig['appid'] + "</appid>"; //appid
-    formData += "<mch_id>" + wxConfig['mch_id'] + "</mch_id>"; //商户号
-    formData += "<nonce_str>" + nonce_str + "</nonce_str>"; //随机字符串
-    formData += "<body>" + body + "</body>"; //商品描述
-    formData += "<notify_url>" + notify_url + "</notify_url>";
-    formData += "<openid>" + openid + "</openid>";
-    formData += "<out_trade_no>" + bookingNo + "</out_trade_no>";
-    formData += "<spbill_create_ip>" + create_ip + "</spbill_create_ip>";
-    formData += "<total_fee>" + total_fee + "</total_fee>";
-    formData += "<trade_type>JSAPI</trade_type>";
-    formData += "<sign>" + paysignjsapi(wxConfig['appid'], body, wxConfig['mch_id'], nonce_str, notify_url, openid, bookingNo, create_ip, total_fee, 'JSAPI') + "</sign>";
-    formData += "</xml>";
-    console.log(formData);
-
-    return axios({
-        url: apiUrl,
-        method: 'POST',
-        body: formData
-    }, function (err, response, body) {
-        
-        if (!err && response.statusCode === 200) {
-            console.log('成功', body);
-            var result_code = getXMLNodeValue('result_code', body.toString("utf-8"));
-            var resultCode = result_code.split('[')[2].split(']')[0];
-            if (resultCode === 'SUCCESS') { //成功
-                var prepay_id = getXMLNodeValue('prepay_id', body.toString("utf-8")).split('[')[2].split(']')[0]; //获取到prepay_id
-                console.log('prepay_id', prepay_id)
-                //签名
-                var _paySignjs = paysignjs(wxConfig['appid'], nonce_str, 'prepay_id=' + prepay_id, 'MD5', timeStamp);
-                return {
-                    code: 0,
-                    data: {
-                        appId: wxConfig['appid'],
-                        timeStamp: timeStamp,
-                        nonceStr: nonce_str,
-                        signType: "MD5",
-                        package: prepay_id,
-                        paySign: _paySignjs,
-                        status: 200
-                    }
-
-                };
-
-            } else {                         //失败
-                var err_code_des = getXMLNodeValue('err_code_des', body.toString("utf-8"));
-                var errDes = err_code_des.split('[')[2].split(']')[0];
-                return {
-                    code: -1,
-                    msg: errDes
-
-                };
-            }
-            console.log('prepay_id是' + resultCode)
-        }
-    })
-}
-
-function paysignjs(appid, nonceStr, package, signType, timeStamp) {
-    var ret = {
-        appId: appid,
-        nonceStr: nonceStr,
-        package: package,
-        signType: signType,
-        timeStamp: timeStamp,
-
-    };
-    var string = raw1(ret);
-    string = string + '&key=支付商户号密钥';
-    console.log(string);
-
-    return crypto.createHash('md5').update(string, 'utf8').digest('hex');
-}
-
-function raw1(args) {
-    var keys = Object.keys(args);
-    keys = keys.sort()
-    var newArgs = {};
-    keys.forEach(function (key) {
-        newArgs[key] = args[key];
-    });
-
-    var string = '';
-    for (var k in newArgs) {
-        string += '&' + k + '=' + newArgs[k];
-    }
-    string = string.substr(1);
-    return string;
-}
-
-//生成签名
-function paysignjsapi(appid, body, mch_id, nonce_str, notify_url, openid, out_trade_no, spbill_create_ip, total_fee, trade_type) {
-    var ret = {
-        appid: appid,
-        body: body,
-        mch_id: mch_id,
-        nonce_str: nonce_str,
-        notify_url: notify_url,
-        openid: openid,
-        out_trade_no: out_trade_no,
-        spbill_create_ip: spbill_create_ip,
-        total_fee: total_fee,
-        trade_type: trade_type
-    };
-    console.log('ret', ret)
-    var string = raw(ret);
-    string = string + '&key=支付商户号密钥';
-    var sign = crypto.createHash('md5').update(string, 'utf8').digest('hex');
-    return sign.toUpperCase()
-}
-
-function raw(args) {
-    var keys = Object.keys(args);
-    keys = keys.sort();
-    var newArgs = {};
-    keys.forEach(function (key) {
-        newArgs[key.toLowerCase()] = args[key];
-    });
-    var string = '';
-    for (var k in newArgs) {
-        string += '&' + k + '=' + newArgs[k];
-    }
-    string = string.substr(1);
-    return string;
-}
-//解析xml
-function getXMLNodeValue(node_name, xml) {
-    var tmp = xml.split("<" + node_name + ">");
-    var _tmp = tmp[1].split("</" + node_name + ">");
-    return _tmp[0];
-}
 //获取url请求客户端ip
 module.exports.get_client_ip = function (req) {
     var ip = req.headers['x-forwarded-for'] ||
@@ -172,37 +34,73 @@ function createTimeStamp() {
 }
 
 
-module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo }) {
-    return new Promise(async (res, inj) => {
-        let token = '';
-        let errText = ''
-        //检验是否注册过
-        let idRes = await sql.promiseCall({ sql: `select id  from user where weixin_openid = ?`, values: [wxInfo.openid] });
-        if (!idRes.error && idRes.results.length > 0) {
-            token = idRes.results[0].id
-        }
-        //进行注册
+//微信支付jsapi下单
+module.exports.jsApicCeateOrder = async function (data) {
+    const { total_fee,openid, body, bookingNo, create_ip } = data
+    const pay = new WxPay({
+        appid: wxConfig.appid,
+        mchid: wxConfig.mch_id,
+        // publicKey: fs.readFileSync('../config/apiclient_cert.pem'), // 公钥
+        // privateKey: fs.readFileSync('../config/apiclient_key.pem'), // 秘钥
+    
+        publicKey: fs.readFileSync('./config/apiclient_cert.pem'), // 公钥
+        privateKey: fs.readFileSync('./config/apiclient_key.pem'), // 秘钥
+        key:wxConfig.APIv3
+    });
+    let params = {
+        "appid": wxConfig.appid,
+        "mchid": wxConfig.mch_id,
+        "out_trade_no": bookingNo,
+        "description": body,
+        "notify_url": wxConfig.notify_url,
+        "amount": {
+            "total": Number(total_fee) ,
+            "currency": "CNY"
+        },
+        "payer": {
+            "openid": openid
+        },
+        scene_info: {
+            payer_client_ip:create_ip,
+          },
+    }
+   
+    return  pay.transactions_jsapi(params)
+},
 
-        if (!errText && !token && userInfo.openid) {
-            let sqlstr = `INSERT INTO user ( weixin_openid,username, gender,avatar , city,province)VALUES
-            (?,?,?,?,?,?)`;
-            let sqlRes = await sql.promiseCall({ sql: sqlstr, values: [userInfo.openid, userInfo.nickname, userInfo.sex, userInfo.headimgurl, userInfo.city, userInfo.province] });
-            if (!sqlRes.error && sqlRes.results.insertId) {
-                token = sqlRes.results.insertId;
-            } else {
-                errText = sqlRes.error.message
+
+
+
+
+    module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo }) {
+        return new Promise(async (res, inj) => {
+            let token = '';
+            let errText = ''
+            //检验是否注册过
+            let idRes = await sql.promiseCall({ sql: `select id  from user where weixin_openid = ?`, values: [wxInfo.openid] });
+            if (!idRes.error && idRes.results.length > 0) {
+                token = idRes.results[0].id
             }
-            await sql.promiseCall({ sql: `INSERT INTO level(user_id) VALUES(?)`, values: [token] });
-            await sql.promiseCall({ sql: `INSERT INTO amount(user_id) VALUES(?)`, values: [token] });
+            //进行注册
 
-        }
+            if (!errText && !token && userInfo.openid) {
+                let sqlstr = `INSERT INTO user ( weixin_openid,username, gender,avatar , city,province)VALUES
+            (?,?,?,?,?,?)`;
+                let sqlRes = await sql.promiseCall({ sql: sqlstr, values: [userInfo.openid, userInfo.nickname, userInfo.sex, userInfo.headimgurl, userInfo.city, userInfo.province] });
+                if (!sqlRes.error && sqlRes.results.insertId) {
+                    token = sqlRes.results.insertId;
+                } else {
+                    errText = sqlRes.error.message
+                }
+                await sql.promiseCall({ sql: `INSERT INTO level(user_id) VALUES(?)`, values: [token] });
+                await sql.promiseCall({ sql: `INSERT INTO amount(user_id) VALUES(?)`, values: [token] });
+
+            }
+            res(token)
+        })
 
 
-        res(token)
-    })
-
-
-}
+    }
 
 
 //获取微信的基本信息
@@ -223,11 +121,12 @@ module.exports.snsapi_userinfo = (openid) => {
 //获取微信的基本信息
 module.exports.baseInfo = (code = '', state = '') => {
     return axios({
+        // method: 'get',
         url: "https://api.weixin.qq.com/sns/oauth2/access_token",
         params: {
             grant_type: 'authorization_code',
             appid: wxConfig.appid,
-            secret: wxConfig.mch_id,
+            secret: wxConfig.secret,
             code: code,
             grant_type: 'authorization_code'
 
@@ -246,7 +145,7 @@ module.exports.getAccessToken = () => {
         params: {
             grant_type: "client_credential",
             appid: wxConfig.appid,
-            secret: wxConfig.mch_id,
+            secret: wxConfig.secret,
 
         }
     }).then(res => {

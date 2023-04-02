@@ -36,6 +36,7 @@
     "pug": "^2.0.3",
     "svg-captcha": "^1.4.0",
     "tencentcloud-sdk-nodejs-sms": "^4.0.570",
+    "wechatpay-node-v3": "^2.1.1",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {

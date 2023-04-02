@@ -3,7 +3,7 @@ const sql = require('../tool/sqlConfig')
 const logisticsApi = require('../tool/logisticsApi')
 router.prefix('/api/order')
 const moment = require('moment');
-const { wxPay, get_client_ip } = require('../tool/wx')
+const { wxPay, get_client_ip, jsApicCeateOrder } = require('../tool/wx')
 //获取状态文字
 let getStatusTxt = function (status) {
   let resTxt = ''
@@ -71,12 +71,14 @@ router.post('/reputation', async function (ctx, next) {
 
 //创建订单
 router.post('/create', async function (ctx, next) {
-  let { goodsJsonStr, remark, peisongType, linkMan, mobile, address, provinceId, cityId, districtId } = ctx.request.body;
+  let { goodsJsonStr, remark, peisongType, linkMan, mobile, address, provinceId, cityId, districtId, balanceSwitch } = ctx.request.body;
+  let userId = ctx.session.userId;
   let amount = 0;
   let goodsNumber = 0;
   let orderNumber = moment(new Date()).format('YYYYMMDDHHmmss') + '' + Number(Math.random() * 100).toFixed(0)
   let goodsList = JSON.parse(goodsJsonStr);
   let resData = {};
+  let wxpayInfo = {};
   // [{"goodsId":2,"number":1,"propertyChildIds":""}]
 
   let errText = ''
@@ -121,9 +123,6 @@ router.post('/create', async function (ctx, next) {
       } else {
         errText = goodsDateSql.error.message;
       }
-
-
-
     }
   }
   //结算价格个数
@@ -133,12 +132,17 @@ router.post('/create', async function (ctx, next) {
     }
     goodsNumber += goodsList.length;
   }
+
+
+
+
+
   //放入数据库 
   if (!errText) {
     let orderInfoSql = await sql.promiseCall({
-      sql: `INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark)
-     VALUES(?,?,?,?,?,?,?);`,
-      values: [orderNumber, 0, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, ctx.session.userId, remark]
+      sql: `INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark,balanceSwitch)
+     VALUES(?,?,?,?,?,?,?,?);`,
+      values: [orderNumber, 0, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, userId, remark, balanceSwitch]
     })
     if (orderInfoSql.error) {
       errText = orderInfoSql.error.message
@@ -185,8 +189,25 @@ router.post('/create', async function (ctx, next) {
     }
   }
 
+  if (!errText&&balanceSwitch == 2) {
+    let create_ip = get_client_ip(ctx.req);
+
+    let userSql = await sql.promiseCall({ sql: `select weixin_openid  from user where id=? limit 0,1`, values: [userId] })
+    if(!userSql.error&&userSql.results.length > 0){
+      wxpayInfo = await jsApicCeateOrder({
+        total_fee: amount,
+        openid: userSql.results[0].weixin_openid,
+        body:'街道购',
+        bookingNo: orderNumber,
+        create_ip
+      });
+      wxpayInfo.packageData = wxpayInfo.package;
+    }
+   
+  }
+
   if (!errText) {
-    ctx.body = { "code": 0, "data": { ...resData }, "msg": "success" }
+    ctx.body = { "code": 0, "data": { orderData: resData, wxpayInfo }, "msg": "success" }
   } else {
     ctx.body = { "code": -1, msg: errText }
   }
@@ -369,7 +390,7 @@ router.post('/close', async function (ctx, next) {
 //进行付款 生成微信支付
 router.all('/wxPay', async function (ctx, next) {
   const userId = ctx.session.userId;
-  const { orderId} = ctx.request.query;
+  const { orderId } = ctx.request.query;
   let userInfo = {}
   let ordernfo = {}
   let create_ip = get_client_ip(ctx.req)
@@ -382,7 +403,7 @@ router.all('/wxPay', async function (ctx, next) {
     ordernfo = orderitemSql.results[0];
   }
 
-  ctx.body = await wxPay({ total_fee:ordernfo.amount, openid:userInfo.weixin_openid, body:'街道购物商品', bookingNo:orderitemSql.orderNumber, create_ip})
+  ctx.body = await jsApicCeateOrder({ total_fee: ordernfo.amount, openid: userInfo.weixin_openid, body: '街道购物商品', bookingNo: orderitemSql.orderNumber, create_ip })
 
 })
 
