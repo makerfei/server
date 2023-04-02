@@ -132,11 +132,6 @@ router.post('/create', async function (ctx, next) {
     }
     goodsNumber += goodsList.length;
   }
-
-
-
-
-
   //放入数据库 
   if (!errText) {
     let orderInfoSql = await sql.promiseCall({
@@ -189,21 +184,20 @@ router.post('/create', async function (ctx, next) {
     }
   }
 
-  if (!errText&&balanceSwitch == 2) {
+  if (!errText && balanceSwitch == 2) {
     let create_ip = get_client_ip(ctx.req);
 
     let userSql = await sql.promiseCall({ sql: `select weixin_openid  from user where id=? limit 0,1`, values: [userId] })
-    if(!userSql.error&&userSql.results.length > 0){
+    if (!userSql.error && userSql.results.length > 0) {
       wxpayInfo = await jsApicCeateOrder({
         total_fee: amount,
         openid: userSql.results[0].weixin_openid,
-        body:'街道购',
+        body: '街道购',
         bookingNo: orderNumber,
         create_ip
       });
       wxpayInfo.packageData = wxpayInfo.package;
     }
-   
   }
 
   if (!errText) {
@@ -387,25 +381,6 @@ router.post('/close', async function (ctx, next) {
 
 
 
-//进行付款 生成微信支付
-router.all('/wxPay', async function (ctx, next) {
-  const userId = ctx.session.userId;
-  const { orderId } = ctx.request.query;
-  let userInfo = {}
-  let ordernfo = {}
-  let create_ip = get_client_ip(ctx.req)
-
-  let userSql = await sql.promiseCall({ sql: `select weixin_openid  from user where id=?`, values: [userId] })
-  let orderitemSql = await sql.promiseCall({ sql: `select *  from orderinfo where id=?`, values: [orderId] })
-
-  if (!orderitemSql.error && !userSql.error && orderitemSql.results.length > 0 && userSql.results.length > 0) {
-    userInfo = userSql.results[0];
-    ordernfo = orderitemSql.results[0];
-  }
-
-  ctx.body = await jsApicCeateOrder({ total_fee: ordernfo.amount, openid: userInfo.weixin_openid, body: '街道购物商品', bookingNo: orderitemSql.orderNumber, create_ip })
-
-})
 
 //进行付款
 router.post('/pay', async function (ctx, next) {
@@ -416,28 +391,39 @@ router.post('/pay', async function (ctx, next) {
   let afterDelBalance = 0;
   let amountReal = 0;
   let orderNumber = 0;
+
   //查询订单
   let orderSql = await sql.promiseCall({ sql: `select amount ,orderNumber from orderinfo where id =?`, values: [orderId] })
+
   //查询余额
   let amountSql = await sql.promiseCall({ sql: `select balance  from amount where user_id =?`, values: [userId] })
   //查看余额是否足
   if (!orderSql.error && !amountSql.error && orderSql.results.length > 0 && amountSql.results.length) {
-    afterDelBalance = amountSql.results[0].balance - orderSql.results[0].amount
-    orderNumber = orderSql.results[0].orderNumber
-    amountReal = orderSql.results[0].amount
-    if (afterDelBalance < 0) {
-      errText = '余额不足'
+   
+
+    afterDelBalance = amountSql.results[0].balance - orderSql.results[0].amount;
+    orderNumber = orderSql.results[0].orderNumber;
+    amountReal = orderSql.results[0].amount;
+     //交易类型为1 余额扣款 就检查账户
+    if (orderSql.results[0].balanceSwitch == 1) {
+      if (afterDelBalance < 0) {
+        errText = '余额不足'
+      }
     }
+
+
   } else {
     errText = '账户错误'
   }
   //修改账户金额
-  if (!errText) {
+  if (!errText &&orderSql.results[0].balanceSwitch == 1) {
 
     let updateAmountSql = await sql.promiseCall({ sql: `update amount set balance=?  where user_id =?`, values: [afterDelBalance, userId] })
     if (updateAmountSql.error) {
       errText = updateAmountSql.error.message
     }
+  }
+  if (!errText){
     //订单状态修改
     let updateOrderSql = await sql.promiseCall({ sql: `update orderinfo set status=1,isPay=1,amountReal=? where id =?`, values: [amountReal, orderId] })
     if (updateOrderSql.error) {
@@ -447,7 +433,7 @@ router.post('/pay', async function (ctx, next) {
     let cashLogSql = await sql.promiseCall({
       sql: `INSERT INTO cashLog (behavior, freeze, orderNumber, type, userId)
     VALUES
-      ( ?,?,?,?,?);`, values: [1, 0, orderNumber, 1, userId]
+      ( ?,?,?,?,?);`, values: [orderSql.results[0].balanceSwitch, 0, orderNumber, 1, userId]
     })
 
     if (cashLogSql.error) {

@@ -4,7 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const email = require('../tool/nodemailer')
 const shortlink = require('../tool/shortlink')
-const {jsApicCeateOrder} = require('../tool/wx')
+const {jsApicCeateOrder,get_client_ip} = require('../tool/wx')
 router.prefix('/api')
 
 
@@ -16,7 +16,13 @@ router.get('/shortlink/:type/:data',async function(ctx, next){
  shortlink(ctx,ctx.params,ctx.cookies)
 })
 router.get('/test',async (ctx, next)=>{
-  ctx.body = await jsApicCeateOrder();
+  ctx.body = await jsApicCeateOrder({
+    total_fee: 10,
+    openid: 'oQ1Td5gcOjqlBKQalxGc7Y6DV1r8',
+    body:'街道购',
+    bookingNo: '21212322232323233434',
+    create_ip:get_client_ip(ctx.req)
+  });
 })
 
 
