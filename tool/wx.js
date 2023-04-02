@@ -9,7 +9,16 @@ const { loginPoint, userInster } = require('../tool/loginOrLogon')
 const fs = require('fs')
 
 const WxPay = require('wechatpay-node-v3')
+const pay = new WxPay({
+    appid: wxConfig.appid,
+    mchid: wxConfig.mch_id,
+    // publicKey: fs.readFileSync('../config/apiclient_cert.pem'), // 公钥
+    // privateKey: fs.readFileSync('../config/apiclient_key.pem'), // 秘钥
 
+    publicKey: fs.readFileSync('./config/apiclient_cert.pem'), // 公钥
+    privateKey: fs.readFileSync('./config/apiclient_key.pem'), // 秘钥
+    key: wxConfig.APIv3
+});
 
 
 //获取url请求客户端ip
@@ -25,29 +34,20 @@ module.exports.get_client_ip = function (req) {
     return ip;
 };
 
-// 随机字符串产生函数
-function createNonceStr() {
-    return Math.random().toString(36).substr(2, 15)
-}
-// 时间戳产生函数
-function createTimeStamp() {
-    return parseInt(new Date().getTime() / 1000) + ''
-}
 
+
+
+
+
+//解析下单的接口
+module.exports.decipher_gcm = (ciphertext, associated_data, nonce) => {
+    return pay.decipher_gcm(ciphertext, associated_data, nonce,  wxConfig.APIv3)
+}
 
 //微信支付jsapi下单
 module.exports.jsApicCeateOrder = async function (data) {
     const { total_fee, openid, body, bookingNo, create_ip } = data
-    const pay = new WxPay({
-        appid: wxConfig.appid,
-        mchid: wxConfig.mch_id,
-        // publicKey: fs.readFileSync('../config/apiclient_cert.pem'), // 公钥
-        // privateKey: fs.readFileSync('../config/apiclient_key.pem'), // 秘钥
-
-        publicKey: fs.readFileSync('./config/apiclient_cert.pem'), // 公钥
-        privateKey: fs.readFileSync('./config/apiclient_key.pem'), // 秘钥
-        key: wxConfig.APIv3
-    });
+  
     let params = {
         "appid": wxConfig.appid,
         "mchid": wxConfig.mch_id,

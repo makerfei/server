@@ -3,7 +3,11 @@ const sql = require('../tool/sqlConfig')
 const logisticsApi = require('../tool/logisticsApi')
 router.prefix('/api/order')
 const moment = require('moment');
-const { wxPay, get_client_ip, jsApicCeateOrder } = require('../tool/wx')
+const { get_client_ip, jsApicCeateOrder } = require('../tool/wx')
+
+
+const { finishOrder,cashLogSql} = require('../tool/order')
+
 //获取状态文字
 let getStatusTxt = function (status) {
   let resTxt = ''
@@ -14,6 +18,7 @@ let getStatusTxt = function (status) {
     case 2: resTxt = '待收货'; break;
     case 3: resTxt = '待评价'; break;
     case 4: resTxt = '完成'; break;
+    case 5: resTxt = '已退款'; break;
     default: break;
   }
   return resTxt
@@ -44,13 +49,15 @@ let getOrderGoodsFun = function (orderId) {
   return new Promise(async (resolve, reject) => {
     let ordergoodsSql = await sql.promiseCall({ sql: `select *, amountSingle as amount,goodsId as id,id as orderItemId from orderItem where orderId = ?`, values: [orderId] });
     if (!ordergoodsSql.error) {
-      resolve(ordergoodsSql.results.map(item=>{return{
-        ...item,
-        amount:Number(item.amount/100).toFixed(2),
-        amountSingle:Number(item.amountSingle/100).toFixed(2)
-      }}))
+      resolve(ordergoodsSql.results.map(item => {
+        return {
+          ...item,
+          amount: Number(item.amount / 100).toFixed(2),
+          amountSingle: Number(item.amountSingle / 100).toFixed(2)
+        }
+      }))
 
- 
+
     } else {
       resolve([])
     }
@@ -162,7 +169,7 @@ router.post('/create', async function (ctx, next) {
     let orderInfoSql = await sql.promiseCall({
       sql: `INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark,balanceSwitch,wxPayData)
      VALUES(?,?,?,?,?,?,?,?,?);`,
-      values: [orderNumber, amount, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, userId, remark, balanceSwitch,JSON.stringify(wxpayInfo)]
+      values: [orderNumber, amount, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, userId, remark, balanceSwitch, JSON.stringify(wxpayInfo)]
     })
     if (orderInfoSql.error) {
       errText = orderInfoSql.error.message
@@ -209,7 +216,7 @@ router.post('/create', async function (ctx, next) {
     }
   }
 
-  
+
 
   if (!errText) {
     ctx.body = { "code": 0, "data": { orderData: resData, wxpayInfo }, "msg": "success" }
@@ -230,11 +237,11 @@ router.get('/detail', async function (ctx, next) {
     if (!orderInfoSql.error) {
       resData.orderInfo = orderInfoSql.results[0] || {}
       resData.orderInfo = {
-       ...resData.orderInfo,
-       amountReal:Number(resData.orderInfo.amountReal/100).toFixed(2),
-       amount:Number(resData.orderInfo.amount/100).toFixed(2),
-       amountLogistics:Number(resData.orderInfo.amountLogistics/100).toFixed(2)
-       
+        ...resData.orderInfo,
+        amountReal: Number(resData.orderInfo.amountReal / 100).toFixed(2),
+        amount: Number(resData.orderInfo.amount / 100).toFixed(2),
+        amountLogistics: Number(resData.orderInfo.amountLogistics / 100).toFixed(2)
+
       }
     } else {
       errText = orderInfoSql.error.message
@@ -268,9 +275,6 @@ router.get('/detail', async function (ctx, next) {
 
 })
 
-
-
-
 router.post('/list', async function (ctx, next) {
   let { page = 1, pageSize = 10, status, orderNumber = '' } = ctx.request.body;
   let userId = ctx.session.userId;
@@ -302,8 +306,8 @@ router.post('/list', async function (ctx, next) {
         return {
           ...item,
           statusStr,
-          amount: Number(item.amount/100).toFixed(2) ,
-          amountReal: Number(item.amountReal/100).toFixed(2) 
+          amount: Number(item.amount / 100).toFixed(2),
+          amountReal: Number(item.amountReal / 100).toFixed(2)
         }
       })
     } else {
@@ -332,9 +336,6 @@ router.get('/set', async function (ctx, next) {
   ctx.body = { "code": 0, "data": { "alarmNotranceHours": 0, "autoDeliveryDays": 7, "autoReputationDays": 7, "closeMinute": 60, "endDays": 30, "grab": false, "hxRole": true, "open": true, "refundBeforeFahuo": false, "scoreExchange": 1.00, "successAfterPay": false, "thirdPeisongFeeMod": 0 }, "msg": "success" }
 
 })
-
-
-
 
 
 //确认收货
@@ -399,22 +400,16 @@ router.post('/close', async function (ctx, next) {
 
 })
 
-
-
-
-//进行付款
+//进行付款 余额的支付方式
 router.post('/pay', async function (ctx, next) {
   let { orderId } = ctx.request.body;
-
   const userId = ctx.session.userId;
   let errText = ''
   let afterDelBalance = 0;
   let amountReal = 0;
   let orderNumber = 0;
-
   //查询订单
   let orderSql = await sql.promiseCall({ sql: `select amount ,orderNumber ,balanceSwitch from orderinfo where id =?`, values: [orderId] })
-
   //查询余额
   let amountSql = await sql.promiseCall({ sql: `select balance  from amount where user_id =?`, values: [userId] })
   //查看余额是否足
@@ -422,49 +417,35 @@ router.post('/pay', async function (ctx, next) {
     afterDelBalance = amountSql.results[0].balance - orderSql.results[0].amount;
     orderNumber = orderSql.results[0].orderNumber;
     amountReal = orderSql.results[0].amount;
-     //交易类型为1 余额扣款 就检查账户
-    if (orderSql.results[0].balanceSwitch == 1) {
-      if (afterDelBalance < 0) {
-        errText = '余额不足'
-      }
+    //交易类型为1 余额扣款 就检查账户
+    if (afterDelBalance < 0) {
+      errText = '余额不足'
     }
-
-
   } else {
     errText = '账户错误'
   }
+  if (orderSql.results[0].balanceSwitch != 1) {
+    errText = '付款方式错误'
+  }
   //修改账户金额
-  if (!errText &&orderSql.results[0].balanceSwitch == 1) {
-
-    let updateAmountSql = await sql.promiseCall({ sql: `update amount set balance=?  where user_id =?`, values: [afterDelBalance, userId] })
-    if (updateAmountSql.error) {
-      errText = updateAmountSql.error.message
-    }
+  let updateAmountSql = await sql.promiseCall({ sql: `update amount set balance=?  where user_id =?`, values: [afterDelBalance, userId] })
+  if (updateAmountSql.error) {
+    errText = updateAmountSql.error.message
   }
-  if (!errText){
-    //订单状态修改
-    let updateOrderSql = await sql.promiseCall({ sql: `update orderinfo set status=1,isPay=1,amountReal=? where id =?`, values: [amountReal, orderId] })
-    if (updateOrderSql.error) {
-      errText = updateOrderSql.error.message
-    }
-    //在交易记录里面插值
-    let cashLogSql = await sql.promiseCall({
-      sql: `INSERT INTO cashLog (behavior, freeze, orderNumber, type, userId)
-    VALUES
-      ( ?,?,?,?,?);`, values: [orderSql.results[0].balanceSwitch, 0, orderNumber, 1, userId]
-    })
 
-    if (cashLogSql.error) {
-      errText = cashLogSql.error.message
-    }
-  }
   if (!errText) {
-    ctx.body = { "code": 0, "msg": "success" }
-  } else {
-
-    ctx.body = { "code": 0, "msg": errText }
+    //订单状态修改
+    if (!await finishOrder({ amountReal, orderId })) {
+      errText = '更新支付订单错误'
+    }
   }
-
+  if(!errText){
+    //更新流水记录
+    if(!await cashLogSql({ behavior:1, orderId, type:0, userId,amount:afterDelBalance})){
+      errText = '订单流水记录错误'
+    }
+  }
+  ctx.body = { "code":errText?-1:0, "msg":errText|| "success" }
 })
 router.get('/statistics', async function (ctx, next) {
   ctx.body = { "code": 0, "data": { "count_id_close": 0, "count_id_no_confirm": 0, "count_id_no_pay": 0, "count_id_no_reputation": 0, "count_id_no_transfer": 0, "count_id_peisonging": 0, "count_id_success": 0, "count_id_wait_to_peisong": 0 }, "msg": "success" }
