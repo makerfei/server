@@ -3,7 +3,7 @@ const sql = require('../tool/sqlConfig')
 router.prefix('/api/discounts')
 
 router.get('/statistics', async function (ctx, next) {
-  ctx.body = { "code": 0, "data": { "canFetch": 1, "canUse": 1, "invalid": 0, "used": 0 }, "msg": "success" }
+  ctx.body = { "code": 0, "data": { "canFetch": 0, "canUse": 0, "invalid": 0, "used": 0 }, "msg": "success" }
 })
 
 router.get('/coupons', async function (ctx, next) {
