@@ -393,14 +393,12 @@ router.post('/pay', async function (ctx, next) {
   let orderNumber = 0;
 
   //查询订单
-  let orderSql = await sql.promiseCall({ sql: `select amount ,orderNumber from orderinfo where id =?`, values: [orderId] })
+  let orderSql = await sql.promiseCall({ sql: `select amount ,orderNumber ,balanceSwitch from orderinfo where id =?`, values: [orderId] })
 
   //查询余额
   let amountSql = await sql.promiseCall({ sql: `select balance  from amount where user_id =?`, values: [userId] })
   //查看余额是否足
   if (!orderSql.error && !amountSql.error && orderSql.results.length > 0 && amountSql.results.length) {
-   
-
     afterDelBalance = amountSql.results[0].balance - orderSql.results[0].amount;
     orderNumber = orderSql.results[0].orderNumber;
     amountReal = orderSql.results[0].amount;
