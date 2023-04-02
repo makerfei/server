@@ -8,6 +8,7 @@ const { wxPay, get_client_ip, jsApicCeateOrder } = require('../tool/wx')
 let getStatusTxt = function (status) {
   let resTxt = ''
   switch (Number(status)) {
+    case -1: resTxt = '已取消'; break;
     case 0: resTxt = '待付款'; break;
     case 1: resTxt = '待发货'; break;
     case 2: resTxt = '待收货'; break;
@@ -281,7 +282,7 @@ router.post('/list', async function (ctx, next) {
   if (status) {
     wheresql += `and status = ${status} `
   } else {
-    wheresql += `and status >=0 `
+    wheresql += `and status >=-1 `
   }
   // if (orderNumber) {
   //   wheresql += `and orderNumber like '%${orderNumber}%' `
@@ -353,7 +354,7 @@ router.post('/delete', async function (ctx, next) {
 
   let { orderId } = ctx.request.body;
   let errText = ''
-  let updateOrderSql = await sql.promiseCall({ sql: `update orderinfo set status=-1 where id =?`, values: [orderId] })
+  let updateOrderSql = await sql.promiseCall({ sql: `update orderinfo set status=-2 where id =?`, values: [orderId] })
   if (updateOrderSql.error) {
     errText = updateOrderSql.error.message
   }
