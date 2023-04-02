@@ -9,7 +9,7 @@ let shortlink = (ctx, data, cookie) => {
             break;
         case 'wx':
             if (data.data === 'kf') {
-                returnUrl = `https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=Mzg3MzI2NDcwNw==`
+                returnUrl = `https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=Mzg3MzI2NDcwNw==#wechat_redirect`
             }
             break;
         default:
