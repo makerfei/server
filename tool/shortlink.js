@@ -8,7 +8,7 @@ let shortlink = (ctx, data, cookie) => {
             returnUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxb3ac0230f6387556&redirect_uri=https://mgdg.shop&response_type=code&scope=${data.data}&state=${data.data}#wechat_redirect`
             break;
         case 'wx':
-            if (data === 'kf') {
+            if (data.data === 'kf') {
                 returnUrl = `https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=Mzg3MzI2NDcwNw==`
             }
             break;

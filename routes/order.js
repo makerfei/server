@@ -43,7 +43,13 @@ let getOrderGoodsFun = function (orderId) {
   return new Promise(async (resolve, reject) => {
     let ordergoodsSql = await sql.promiseCall({ sql: `select *, amountSingle as amount,goodsId as id,id as orderItemId from orderItem where orderId = ?`, values: [orderId] });
     if (!ordergoodsSql.error) {
-      resolve(ordergoodsSql.results)
+      resolve(ordergoodsSql.results.map(item=>{return{
+        ...item,
+        amount:Number(item.amount/100).toFixed(2),
+        amountSingle:Number(item.amountSingle/100).toFixed(2)
+      }}))
+
+ 
     } else {
       resolve([])
     }
@@ -132,12 +138,30 @@ router.post('/create', async function (ctx, next) {
     }
     goodsNumber += goodsList.length;
   }
+
+
+  if (!errText && balanceSwitch == 2) {
+    let create_ip = get_client_ip(ctx.req);
+
+    let userSql = await sql.promiseCall({ sql: `select weixin_openid  from user where id=? limit 0,1`, values: [userId] })
+    if (!userSql.error && userSql.results.length > 0) {
+      wxpayInfo = await jsApicCeateOrder({
+        total_fee: amount,
+        openid: userSql.results[0].weixin_openid,
+        body: '街道购',
+        bookingNo: orderNumber,
+        create_ip
+      });
+      wxpayInfo.packageData = wxpayInfo.package;
+    }
+  }
+
   //放入数据库 
   if (!errText) {
     let orderInfoSql = await sql.promiseCall({
-      sql: `INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark,balanceSwitch)
-     VALUES(?,?,?,?,?,?,?,?);`,
-      values: [orderNumber, 0, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, userId, remark, balanceSwitch]
+      sql: `INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark,balanceSwitch,wxPayData)
+     VALUES(?,?,?,?,?,?,?,?,?);`,
+      values: [orderNumber, amount, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, userId, remark, balanceSwitch,JSON.stringify(wxpayInfo)]
     })
     if (orderInfoSql.error) {
       errText = orderInfoSql.error.message
@@ -184,21 +208,7 @@ router.post('/create', async function (ctx, next) {
     }
   }
 
-  if (!errText && balanceSwitch == 2) {
-    let create_ip = get_client_ip(ctx.req);
-
-    let userSql = await sql.promiseCall({ sql: `select weixin_openid  from user where id=? limit 0,1`, values: [userId] })
-    if (!userSql.error && userSql.results.length > 0) {
-      wxpayInfo = await jsApicCeateOrder({
-        total_fee: amount,
-        openid: userSql.results[0].weixin_openid,
-        body: '街道购',
-        bookingNo: orderNumber,
-        create_ip
-      });
-      wxpayInfo.packageData = wxpayInfo.package;
-    }
-  }
+  
 
   if (!errText) {
     ctx.body = { "code": 0, "data": { orderData: resData, wxpayInfo }, "msg": "success" }
@@ -218,6 +228,13 @@ router.get('/detail', async function (ctx, next) {
     let orderInfoSql = await sql.promiseCall({ sql: `select * from orderInfo where userId=? and  orderNumber = ? limit 0 ,1 `, values: [ctx.session.userId, orderNumber] })
     if (!orderInfoSql.error) {
       resData.orderInfo = orderInfoSql.results[0] || {}
+      resData.orderInfo = {
+       ...resData.orderInfo,
+       amountReal:Number(resData.orderInfo.amountReal/100).toFixed(2),
+       amount:Number(resData.orderInfo.amount/100).toFixed(2),
+       amountLogistics:Number(resData.orderInfo.amountLogistics/100).toFixed(2)
+       
+      }
     } else {
       errText = orderInfoSql.error.message
     }
@@ -283,7 +300,9 @@ router.post('/list', async function (ctx, next) {
         let statusStr = getStatusTxt(item.status)
         return {
           ...item,
-          statusStr
+          statusStr,
+          amount: Number(item.amount/100).toFixed(2) ,
+          amountReal: Number(item.amountReal/100).toFixed(2) 
         }
       })
     } else {
