@@ -19,7 +19,6 @@ router.get('/wxLogin', async function (ctx, next) {
     }
     if(wxInfo.openid){
         token = await wxLoginOrLogon({wxInfo,userInfo,ip})
-        if(token)ctx.session.userId = token;
     }
     ctx.body = { code:0,data:{wxInfo,userInfo,token}  }
 })
