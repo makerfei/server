@@ -11,7 +11,7 @@ const cashLogTypeList ={
 //支付完成，修改订单状态
 module.exports.finishOrder = ({ amountReal, orderId,transaction_id='' }) => {
     //订单状态修改
-    return sql.promiseCall({ sql: `update orderinfo set status=1,isPay=1,amountReal=? ,transaction_id =? where id =?`, values: [amountReal, orderId,transaction_id] }).then(({ error, results }) => {
+    return sql.promiseCall({ sql: `update orderinfo set status=1,isPay=1,amountReal=? ,transaction_id =? where id =?`, values: [amountReal,transaction_id,orderId] }).then(({ error, results }) => {
         return !error
     })
 
