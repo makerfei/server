@@ -179,7 +179,7 @@ const adminIndex = (app) => {
         let needLand = true
         if ((ctx.originalUrl.indexOf('/api/user') === 0 ||
             ctx.originalUrl.indexOf('/api/admin') === 0 ||
-            ctx.originalUrl.indexOf('/api/dfs') === 0 ||
+            // ctx.originalUrl.indexOf('/api/dfs') === 0 ||
             ctx.originalUrl.indexOf('/api/shopping-cart') === 0 ||
             ctx.originalUrl.indexOf('/api/order') === 0)
             && !userId) {
