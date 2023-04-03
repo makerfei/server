@@ -132,7 +132,7 @@ router.post('/create', async function (ctx, next) {
     goodsNumber += goodsList.length;
   }
 
-
+  //微信支付信息
   if (!errText && balanceSwitch == 2) {
     let create_ip = get_client_ip(ctx.req);
 
@@ -162,7 +162,7 @@ router.post('/create', async function (ctx, next) {
   }
 
 
-  //提取
+  //提取信息用于展示
   if (!errText) {
     let orderInfoSql = await sql.promiseCall({ sql: `select * from orderInfo where orderNumber = ? limit 0 ,1`, values: [orderNumber] })
     if (!orderInfoSql.error) {
@@ -173,7 +173,7 @@ router.post('/create', async function (ctx, next) {
   }
 
   //物流地址保存数据库
-  if (!errText) {
+  if (!errText &&mobile.logisticsId&&address&&linkMan&&mobile) {
     let orderInfoSql = await sql.promiseCall({
       sql: `INSERT INTO logistics ( address, linkMan, mobile, provinceId, districtId, orderId, cityId)
   VALUES (?,?,?,?,?,?,?);`,
@@ -201,9 +201,7 @@ router.post('/create', async function (ctx, next) {
     }
   }
 
-
   // 创建下单日志
-
   if (!errText) {
     await logsSql({ orderId: resData.id, type: balanceSwitch == 1 ? 10 : 11 })
   }
