@@ -6,7 +6,7 @@ const moment = require('moment');
 const { get_client_ip, jsApicCeateOrder } = require('../tool/wx')
 
 
-const { finishOrder,cashLogSql} = require('../tool/order')
+const { finishOrder,cashLogSql,logsSql} = require('../tool/order')
 
 //获取状态文字
 let getStatusTxt = function (status) {
@@ -215,8 +215,13 @@ router.post('/create', async function (ctx, next) {
       }
     }
   }
+  
 
+  // 创建下单日志
 
+  if(!errText){
+    await logsSql({orderId:resData.id,userId,type:balanceSwitch==1?10:11})
+  }
 
   if (!errText) {
     ctx.body = { "code": 0, "data": { orderData: resData, wxpayInfo }, "msg": "success" }
@@ -445,6 +450,11 @@ router.post('/pay', async function (ctx, next) {
       errText = '订单流水记录错误'
     }
   }
+  if(!errText){
+    await logsSql({orderId,userId,type:20})
+  }
+
+  
   ctx.body = { "code":errText?-1:0, "msg":errText|| "success" }
 })
 router.get('/statistics', async function (ctx, next) {
