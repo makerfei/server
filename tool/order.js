@@ -42,8 +42,9 @@ const getLogsTypeList = function (status) {
         case 21: resTxt = '微信支付'; break;
         case 32: resTxt = '已发货'; break;    //?
         case 40: resTxt = '已签收'; break;
-        case 50: resTxt = '发起退货'; break;  //?
-        case 59: resTxt = '退款成功'; break;   //?
+        case 50: resTxt = '已评价'; break;
+        case 60: resTxt = '发起退货'; break;  //?
+        case 69: resTxt = '退款成功'; break;   //?
         default: break;
     }
     return resTxt

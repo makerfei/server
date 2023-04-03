@@ -64,6 +64,9 @@ router.post('/reputation', async function (ctx, next) {
     });
   }
   let upStatusSql = await sql.promiseCall({ sql: `update orderinfo set status=4 where id  = ?`, values: [orderId] })
+  //评价打点
+  await logsSql({ orderId, type: 50 })
+  
   ctx.body = { "code": 0, msg: 'success' }
 })
 
