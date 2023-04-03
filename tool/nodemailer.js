@@ -1,6 +1,7 @@
 //nodemailer.js
 const nodemailer = require('nodemailer');
 var configData = require('../config/email')
+
 //创建一个smtp服务器
 const config = {
     host: 'smtp.163.com',

@@ -6,7 +6,7 @@ const moment = require('moment');
 const { get_client_ip, jsApicCeateOrder } = require('../tool/wx')
 
 
-const { finishOrder, cashLogSql, logsSql, getStatusTxt, getLogsTypeList ,orderClose} = require('../tool/order')
+const { finishOrder, cashLogSql, logsSql, getStatusTxt, getLogsTypeList, orderClose, paySuccessEmailToSeller } = require('../tool/order')
 
 
 
@@ -66,7 +66,7 @@ router.post('/reputation', async function (ctx, next) {
   let upStatusSql = await sql.promiseCall({ sql: `update orderinfo set status=4 where id  = ?`, values: [orderId] })
   //评价打点
   await logsSql({ orderId, type: 50 })
-  
+
   ctx.body = { "code": 0, msg: 'success' }
 })
 
@@ -176,7 +176,7 @@ router.post('/create', async function (ctx, next) {
   }
 
   //物流地址保存数据库
-  if (!errText &&resData.logisticsId&&address&&linkMan&&mobile) {
+  if (!errText && peisongType == 'kd') {
     let orderInfoSql = await sql.promiseCall({
       sql: `INSERT INTO logistics ( address, linkMan, mobile, provinceId, districtId, orderId, cityId)
   VALUES (?,?,?,?,?,?,?);`,
@@ -229,12 +229,12 @@ router.get('/detail', async function (ctx, next) {
       resData.orderInfo = orderInfoSql.results[0] || {}
       let orderPayIsOver = false;
       //判断订单超时主题
-      if(resData.orderInfo.status==0&&resData.orderInfo.balanceSwitch==2){
-          if( moment(resData.orderInfo.dateAdd).valueOf() + resData.orderInfo.closeMinute * 60 * 1000< moment().valueOf()){
-            //超时自动关闭订单
-            orderPayIsOver = true;
-            await orderClose({orderId:resData.orderInfo.id})
-          }
+      if (resData.orderInfo.status == 0 && resData.orderInfo.balanceSwitch == 2) {
+        if (moment(resData.orderInfo.dateAdd).valueOf() + resData.orderInfo.closeMinute * 60 * 1000 < moment().valueOf()) {
+          //超时自动关闭订单
+          orderPayIsOver = true;
+          await orderClose({ orderId: resData.orderInfo.id })
+        }
       }
       resData.orderInfo = {
         ...resData.orderInfo,
@@ -243,13 +243,13 @@ router.get('/detail', async function (ctx, next) {
         amountLogistics: Number(resData.orderInfo.amountLogistics / 100).toFixed(2),
         dateAdd: moment(resData.orderInfo.dateAdd).format('YYYY-MM-DD hh:mm:ss'),
         dateClose: moment(resData.orderInfo.dateAdd).valueOf() + resData.orderInfo.closeMinute * 60 * 1000,
-        status:orderPayIsOver?-1:resData.orderInfo.status
+        status: orderPayIsOver ? -1 : resData.orderInfo.status
       }
     } else {
       errText = orderInfoSql.error.message
     }
   }
-  
+
   if (!errText) {
     resData.goods = await getOrderGoodsFun(resData.orderInfo.id)
   }
@@ -378,7 +378,7 @@ router.post('/delete', async function (ctx, next) {
 router.post('/close', async function (ctx, next) {
 
   let { orderId } = ctx.request.body;
- let errText = await  orderClose({orderId})
+  let errText = await orderClose({ orderId })
   ctx.body = { "code": !errText ? 0 : -1, "msg": errText || "success" }
 
 
@@ -425,7 +425,7 @@ router.post('/pay', async function (ctx, next) {
   }
   if (!errText) {
     //更新流水记录
-    if (!await cashLogSql({ behavior: 1, orderId, type: 0, userId, amount: afterDelBalance })) {
+    if (!await cashLogSql({ behavior: 1, orderId, type: 0, userId, amount: orderSql.results[0].amount })) {
       errText = '订单流水记录错误'
     }
   }
@@ -433,6 +433,7 @@ router.post('/pay', async function (ctx, next) {
     await logsSql({ orderId, type: 20 })
   }
 
+  paySuccessEmailToSeller({ orderNumber, buyerId: userId, summary: 'SUCCESS', emailTotal: orderSql.results[0].amount, payWay: '余额支付', emailPayopenId: '', emailisRepeat: 0, create_time: new moment().format('YYYY-MM-DD HH:mm:ss') })
 
   ctx.body = { "code": errText ? -1 : 0, "msg": errText || "success" }
 })
@@ -445,6 +446,70 @@ router.get('/statistics', async function (ctx, next) {
 router.get('/logisticsApi', async function (ctx, next) {
   ctx.body = await logisticsApi(ctx.request.query)
 })
+
+
+//邮件进行发货处理
+router.post('/deliver', async function (ctx, next) {
+  let { token, name, number, orderNumber } = ctx.request.body;
+  let errText = ''
+
+  if (token != 'zhangfei') {
+    errText = '请填写正确标识';
+  }
+  if (!orderNumber) {
+    errText = '请填写订单';
+  }
+
+  let orderSql = {};
+
+  if (!errText) {
+    //查询订单
+    orderSql = await sql.promiseCall({ sql: `select id, isNeedLogistics,status from orderinfo where orderNumber =?`, values: [orderNumber ] }).then(({ error, results }) => {
+      if (!error && results.length > 0) {
+        return results[0]
+      } else {
+        errText = '订单不存在';
+        return {}
+      }
+    })
+  }
+
+  if (!errText) {
+    //无物流的情况
+    if (orderSql.isNeedLogistics == 0) {
+      if (orderSql.status == 1) {
+        //状态修改
+        await sql.promiseCall({ sql: `update orderinfo set status =2 where id =?`, values: [ orderSql.id] });
+        //插入加入
+        await logsSql({ orderId:orderSql.id, type: 30 });
+        errText = '无物流 ，成功发货'
+      } else {
+        errText = '无物流 ,已经发过货，无需再次发货'
+      }
+    } else { //有物流的情况
+      if (name && number) {
+        await sql.promiseCall({ sql: `update logistics set shipperName =?, trackingNumber = ?  where orderId =?`, values: [name, number, orderSql.id ] });
+        if (orderSql.status == 1) {
+          //状态修改
+          await sql.promiseCall({ sql: `update orderinfo set status =2 where id =?`, values: [orderSql.id ] });
+          await logsSql({ orderId:orderSql.id, type: 30 });
+          errText = '物流信息已经填写，发货成功'
+
+        } else {
+          errText = '成功更新物流  之前已发货，现在更新了'
+        }
+       
+      } else {
+        errText = '订单需要物流信息，填写物流'
+      }
+    }
+  }
+
+
+  ctx.body = errText
+
+})
+
 
 
 

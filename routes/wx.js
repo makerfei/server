@@ -3,7 +3,7 @@ const sql = require('../tool/sqlConfig')
 router.prefix('/api/wx')
 const { baseInfo, decipher_gcm, snsapi_userinfo, wxLoginOrLogon, get_client_ip } = require('../tool/wx')
 
-const { finishOrder, cashLogSql,logsSql } = require('../tool/order')
+const { finishOrder, cashLogSql,logsSql,paySuccessEmailToSeller } = require('../tool/order')
 
 
 var nodemailer = require('../tool/nodemailer')
@@ -44,20 +44,17 @@ router.all('/payCallBack', async function (ctx, next) {
             });
             emailPayopenId = isPay;
             emailTotal = total;
-            emailPayopenId = openid
+            emailPayopenId = openid;
             if (id && userId && transaction_id && !isPay) {
                 let orderRes = await finishOrder({ amountReal: total, orderId: id, transaction_id })
                 let cashRes = await cashLogSql({ behavior: 1, orderId: id, type: 1, userId, amount: total })
                 let logsRes = await logsSql({ orderId: id, type: 21 })
             }
         }
-
-        // 数据库错误报给邮件
-        nodemailer({
-            subject: '支付回调',
-            to: 'maker.wx@gmail.com',
-            text: JSON.stringify(`订单状态：${summary},金额：${emailTotal},支付者：${emailPayopenId},是否重复回调：${emailisRepeat},时间：${create_time}`)
-        })
+         //支付成功发送邮件给商户
+        paySuccessEmailToSeller({  orderNumber:out_trade_no, summary,emailTotal,payWay:'微信jsapi',emailPayopenId,emailisRepeat,create_time})
+       
+    
 
 
     }

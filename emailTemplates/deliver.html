@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-
+    //W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http: //www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>付款发货处理---</title>
+</head>
+
+<body>
+
+    <table border="0" cellspacing="0" width="100%" cellpadding="0"
+        style="background:#F8F8FB;font-size:14px; border-collapse: collapse">
+        <tr>
+            <td align='center' style="padding-top: 50px;">
+
+                <table border="0" cellspacing="0" width="700" cellpadding="0"
+                    style="margin: 0 auto;background:white;box-shadow:0 0 3px 5px #888888;font-size:14px; border-collapse: collapse">
+                    <tr>
+                        <td>
+
+                            <table border="0" cellspacing="0" width="540" cellpadding="0"
+                                style="margin:80px; margin-top:0; margin-bottom: 0; background:white;font-size:14px; border-collapse: collapse">
+                                <tr>
+                                    <td>
+                                        <div>支付状态 :{{summary}}</div>
+                                        <div>订单单号 :{{orderNumber}}</div>
+                                        <div>订单金额: {{emailTotal}}</div>
+                                        <div>支付方式 :{{payWay}}</div>
+                                        <div>购买人id :{{buyerId}}</div>
+                                        <div>购买人微信id: {{emailPayopenId}}</div>
+                                        <div>是否重复发送 :{{emailisRepeat}}</div>
+                                        <div>创建时间 :{{create_time}}</div>
+                                        <br/>
+                                        <form action="https://mgdg.shop/api/order/deliver" method="post">
+                                            <!-- <form action="http://127.0.0.1/api/order/deliver" method="post"> -->
+                                            订单单号: <input type="text"  value="{{orderNumber}}" name="orderNumber" /><br /><br />
+                                            用户标识: <input type="text" name="token" value="zhangfeifei" /><br /><br />
+                                            快递名称: <input type="text" name="name" /><br /><br/>
+                                            快递名称: <input type="text" name="number" /><br />
+                                            <br/>
+                                            <!-- input type="submit" 表示提交按钮 -->
+                                            <input type="submit" value="发送" />
+                                            <br />
+                                            <br />
+                                        </form>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

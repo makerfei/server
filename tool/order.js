@@ -1,6 +1,8 @@
 const sql = require('../tool/sqlConfig')
-
-
+const nodemailer = require('../tool/nodemailer');
+const fs = require('fs');
+const path = require('path');
+const art = require('art-template');
 //获取状态文字
 let getStatusTxt = function (status) {
     let resTxt = ''
@@ -40,7 +42,7 @@ const getLogsTypeList = function (status) {
         case 19: resTxt = '删除订单'; break;
         case 20: resTxt = '余额支付'; break;
         case 21: resTxt = '微信支付'; break;
-        case 32: resTxt = '已发货'; break;    //?
+        case 30: resTxt = '已发货'; break;   
         case 40: resTxt = '已签收'; break;
         case 50: resTxt = '已评价'; break;
         case 60: resTxt = '发起退货'; break;  //?
@@ -123,6 +125,35 @@ module.exports.orderClose = ({ orderId }) => {
     })
 
 }
+
+
+//付款成功发送邮件  给自己
+module.exports.paySuccessEmailToSeller = (data) => {
+    let { orderNumber = '', summary = '', emailTotal = '',
+        payWay = '', buyerId = '', emailPayopenId = '',
+        emailisRepeat = 0, create_time = '' } = data
+
+    let emailTem = fs.readFileSync(path.join(__dirname, `../emailTemplates/deliver.html`)).toString()
+    let emailfile = art.render(emailTem,{...data,emailTotal:Number(emailTotal/100).toFixed(2)});
+    nodemailer({
+        subject: '支付回调',
+        to: 'maker.wx@gmail.com',
+        html: emailfile
+    })
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
 
 
 
