@@ -3,6 +3,7 @@ const nodemailer = require('../tool/nodemailer');
 const fs = require('fs');
 const path = require('path');
 const art = require('art-template');
+const { error } = require('console');
 //获取状态文字
 let getStatusTxt = function (status) {
     let resTxt = ''
@@ -62,17 +63,21 @@ module.exports.finishOrder = ({ amountReal, orderId, transaction_id = '' }) => {
 
 
 
-
-
-
 //创建金额变化日志
-module.exports.cashLogSql = ({ behavior, orderId = '', type, userId, amount }) => {
+module.exports.cashLogSql = async ({ behavior, orderId = '', type, userId, amount }) => {
+    //更改账户总额
+    if(behavior===1){
+        sql.promiseCall({
+            sql: `UPDATE amount a
+            LEFT JOIN amount b ON a.id = b.id 
+            SET a.totalPayAmount = b.totalPayAmount+? ,a.totalPayNumber = b.totalPayAmount+1 where a.user_id =?`, values: [amount, userId]
+        })
+    }
     return sql.promiseCall({
         sql: `INSERT INTO cashLog (behavior,  orderId, type, userId,amount)  VALUES( ?,?,?,?,?);`, values: [behavior, orderId, type, userId, amount]
     }).then(({ error, results }) => {
         return !error
     })
-
 }
 
 //创建订单变化日志

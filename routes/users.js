@@ -1,6 +1,8 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
 router.prefix('/api/user')
+const moment = require('moment');
+const {getCashLogTypeList}  =require('../tool/order')
 //用户详情
 router.get('/detail', async function (ctx, next) {
   let errortxt = ""
@@ -132,10 +134,10 @@ router.get('/amount', async function (ctx, next) {
   let amountsql = await sql.promiseCall({ sql: `select * from amount where user_id = '${ctx.session.userId}'`, values: [] });
   if (!amountsql.error && amountsql.results.length > 0) {
     resData = amountsql.results[0];
-    resData = {...resData,balance:Number(resData.balance/100).toFixed(2)}
-   
+    resData = { ...resData, balance: Number(resData.balance / 100).toFixed(2) }
+
   } else {
-    errortxt = amountsql?.error?.message||'账户查询失败'
+    errortxt = amountsql?.error?.message || '账户查询失败'
   }
   if (!errortxt) {
     ctx.body = { "code": 0, "msg": "success", data: resData }
@@ -271,7 +273,7 @@ router.post('/shipping-address/update', async function (ctx, next) {
 })
 
 //删除地址
-router.post('/shipping-address/delete', async function (ctx, next) {
+router.post('/shipping-address/delete', async (ctx, next) => {
   let { id } = ctx.request.body;
   let addressSqlDel = await sql.promiseCall({ sql: `DELETE from address where id = ${id} and userId = '${ctx.session.userId}'`, values: [] })
   if (!addressSqlDel.error) {
@@ -283,22 +285,59 @@ router.post('/shipping-address/delete', async function (ctx, next) {
 })
 
 
+//获取消费记录
+router.post('/cashLog/v2', async (ctx, next) => {
+  let { page = 1, pageSize = 10 } = ctx.request.body;
+  let userId = ctx.session.userId;
+  let errText = ''
+  let resData = []
+  let count = 0;
 
+  if (!errText) {
+    let orderInfoSql = await sql.promiseCall({
+      sql: `select * from cashlog where userId=?  order by id desc limit ${(page - 1) * pageSize},${pageSize} `,
+      values: [userId]
+    })
+    if (!orderInfoSql.error) {
+      resData = orderInfoSql.results.map(item => {
+        return {
+          ...item,
+          amount: Number(item.amount / 100).toFixed(2),
+          typeStr:getCashLogTypeList(item.type) ,
+          dateAdd:moment(item.dateAdd).format('YYYY-MM-DD HH:mm:ss'),
 
-
-
-
-
-router.post('/cashLog/v2', function (ctx, next) {
-  ctx.body = {
-    "code": 0, "data": {
-      "result": [
-        { "amount": 1.00, "balance": 11111939.99, "behavior": 1, "dateAdd": "2023-03-17 05:26:24", "freeze": 1, "id": 2231794, "orderId": 1784887, "orderId2": 1784887, "shopId": 0, "type": 2, "typeStr": "支付订单", "uid": 7448958, "userId": 1605 },
-        { "amount": 0.01, "balance": 940.99, "behavior": 1, "dateAdd": "2023-03-17 02:02:32", "freeze": 2, "id": 2231715, "orderId": 1784876, "orderId2": 1784876, "shopId": 0, "type": 2, "typeStr": "支付订单", "uid": 7448958, "userId": 1605 },
-        { "amount": 59.00, "balance": 941.00, "behavior": 1, "dateAdd": "2023-03-17 01:57:47", "freeze": -1, "id": 2231714, "orderId": 1784875, "orderId2": 1784875, "shopId": 0, "type": 2, "typeStr": "支付订单", "uid": 7448958, "userId": 1605 },
-        { "amount": 1000.00, "balance": 1000.00, "behavior": 0, "dateAdd": "2023-03-17 01:57:23", "freeze": 0.00, "id": 2231713, "type": 140, "typeStr": "积分兑换成金额", "uid": 7448958, "userId": 1605 }], "totalPage": 1, "totalRow": 4
-    }, "msg": "success"
+        }
+      })
+    } else {
+      errText = orderInfoSql.error.message
+    }
   }
+  if (!errText) {
+
+    count = await sql.promiseCall({
+      sql: `select count(*) as count from cashlog where userId=? `,
+      values: [userId]
+    }).then((error, values) => {
+      return !error && values.length > 0 && values[0].count || 0
+    })
+
+  }
+
+  if (!errText) {
+    ctx.body = {
+      "code": 0, "data": {
+        result: resData,
+        totalPage: Math.ceil(count / pageSize),
+        totalRow: count
+      }, "msg": "success"
+    }
+  } else {
+    ctx.body = { "code": -1, msg: errText }
+  }
+
+
+
+
 })
 
 
