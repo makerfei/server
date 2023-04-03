@@ -173,7 +173,7 @@ router.post('/create', async function (ctx, next) {
   }
 
   //物流地址保存数据库
-  if (!errText &&mobile.logisticsId&&address&&linkMan&&mobile) {
+  if (!errText &&resData.logisticsId&&address&&linkMan&&mobile) {
     let orderInfoSql = await sql.promiseCall({
       sql: `INSERT INTO logistics ( address, linkMan, mobile, provinceId, districtId, orderId, cityId)
   VALUES (?,?,?,?,?,?,?);`,
