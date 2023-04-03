@@ -6,24 +6,9 @@ const moment = require('moment');
 const { get_client_ip, jsApicCeateOrder } = require('../tool/wx')
 
 
-const { finishOrder,cashLogSql,logsSql} = require('../tool/order')
+const { finishOrder, cashLogSql, logsSql, getStatusTxt, getLogsTypeList ,orderClose} = require('../tool/order')
 
-//获取状态文字
-let getStatusTxt = function (status) {
-  let resTxt = ''
-  switch (Number(status)) {
-    case -1: resTxt = '已取消'; break;
-    case 0: resTxt = '待付款'; break;
-    case 1: resTxt = '待发货'; break;
-    case 2: resTxt = '待收货'; break;
-    case 3: resTxt = '待评价'; break;
-    case 4: resTxt = '完成'; break;
-    case 5: resTxt = '已退款'; break;
-    default: break;
-  }
-  return resTxt
 
-}
 
 //规格key转文字
 let propertyChildIdsGetText = async function (keyStr) {
@@ -215,12 +200,12 @@ router.post('/create', async function (ctx, next) {
       }
     }
   }
-  
+
 
   // 创建下单日志
 
-  if(!errText){
-    await logsSql({orderId:resData.id,userId,type:balanceSwitch==1?10:11})
+  if (!errText) {
+    await logsSql({ orderId: resData.id, type: balanceSwitch == 1 ? 10 : 11 })
   }
 
   if (!errText) {
@@ -241,17 +226,29 @@ router.get('/detail', async function (ctx, next) {
     let orderInfoSql = await sql.promiseCall({ sql: `select * from orderInfo where userId=? and  orderNumber = ? limit 0 ,1 `, values: [ctx.session.userId, orderNumber] })
     if (!orderInfoSql.error) {
       resData.orderInfo = orderInfoSql.results[0] || {}
+      let orderPayIsOver = false;
+      //判断订单超时主题
+      if(resData.orderInfo.status==0&&resData.orderInfo.balanceSwitch==2){
+          if( moment(resData.orderInfo.dateAdd).valueOf() + resData.orderInfo.closeMinute * 60 * 1000< moment().valueOf()){
+            //超时自动关闭订单
+            orderPayIsOver = true;
+            await orderClose({orderId:resData.orderInfo.id})
+          }
+      }
       resData.orderInfo = {
         ...resData.orderInfo,
         amountReal: Number(resData.orderInfo.amountReal / 100).toFixed(2),
         amount: Number(resData.orderInfo.amount / 100).toFixed(2),
-        amountLogistics: Number(resData.orderInfo.amountLogistics / 100).toFixed(2)
-
+        amountLogistics: Number(resData.orderInfo.amountLogistics / 100).toFixed(2),
+        dateAdd: moment(resData.orderInfo.dateAdd).format('YYYY-MM-DD hh:mm:ss'),
+        dateClose: moment(resData.orderInfo.dateAdd).valueOf() + resData.orderInfo.closeMinute * 60 * 1000,
+        status:orderPayIsOver?-1:resData.orderInfo.status
       }
     } else {
       errText = orderInfoSql.error.message
     }
   }
+  
   if (!errText) {
     resData.goods = await getOrderGoodsFun(resData.orderInfo.id)
   }
@@ -268,6 +265,13 @@ router.get('/detail', async function (ctx, next) {
     } else {
       errText = orderInfoSql.error.message
     }
+  }
+
+  //获取订单操作记录
+  if (!errText) {
+    resData.logs = await sql.promiseCall({ sql: `select * from logs where orderId = ?`, values: [resData.orderInfo.id] }).then(({ error, results }) => {
+      return (!error && results || []).map(item => { return { ...item, typeStr: getLogsTypeList(item.type), dateAdd: moment(item.dateAdd).format('YYYY-MM-DD hh:mm:ss') } })
+    })
   }
 
 
@@ -352,6 +356,7 @@ router.post('/delivery', async function (ctx, next) {
   if (updateOrderSql.error) {
     errText = updateOrderSql.error.message
   }
+  await logsSql({ orderId, type: 40 })
   ctx.body = { "code": !errText ? 0 : -1, "msg": errText || "success" }
 })
 
@@ -364,6 +369,7 @@ router.post('/delete', async function (ctx, next) {
   if (updateOrderSql.error) {
     errText = updateOrderSql.error.message
   }
+  await logsSql({ orderId, type: 19 })
   ctx.body = { "code": !errText ? 0 : -1, "msg": errText || "success" }
 
 })
@@ -371,35 +377,7 @@ router.post('/delete', async function (ctx, next) {
 router.post('/close', async function (ctx, next) {
 
   let { orderId } = ctx.request.body;
-  let errText = ''
-  let orderitemList = []
-  let updateOrderSql = await sql.promiseCall({ sql: `update orderinfo set status=-1 where id =?`, values: [orderId] })
-  if (updateOrderSql.error) {
-    errText = updateOrderSql.error.message
-  }
-  //创建锁定库存的逆向操作
-  let orderitemSql = await sql.promiseCall({ sql: `select * from orderitem  where orderId =?`, values: [orderId] })
-  if (!orderitemSql.error) {
-    orderitemList = orderitemSql.results
-  } else {
-    errText = orderitemSql.error.message
-  }
-
-  //订单回调
-  let goodsCallBackSql = await sql.promiseCall({
-    sql: `update goods as a
-  set a.stores = (select sum(b.number)+ a.stores from orderitem as b where a.id=b.goodsId and b.orderId = ?)
-  where a.id in (select c.goodsId from orderitem as c where c.orderId = ?)`, values: [orderId, orderId]
-  })
-
-  let skuCallBackSql = await sql.promiseCall({
-    sql: ` update skulist as a  set a.stores = (select sum(b.number)+a.stores from orderitem as b  where  b.propertyChildIds = a.propertyChildIds and b.orderId = ?  and a.goodsId = b.goodsId)
-  where a.goodsId in (select c.goodsId from orderitem as c where c.orderId = ?  and a.goodsId = c.goodsId and  c.propertyChildIds = a.propertyChildIds );
-`, values: [orderId, orderId]
-  })
-  if (goodsCallBackSql.error || skuCallBackSql.error) {
-    errText = goodsCallBackSql.error.message || skuCallBackSql.message
-  }
+ let errText = await  orderClose({orderId})
   ctx.body = { "code": !errText ? 0 : -1, "msg": errText || "success" }
 
 
@@ -444,18 +422,18 @@ router.post('/pay', async function (ctx, next) {
       errText = '更新支付订单错误'
     }
   }
-  if(!errText){
+  if (!errText) {
     //更新流水记录
-    if(!await cashLogSql({ behavior:1, orderId, type:0, userId,amount:afterDelBalance})){
+    if (!await cashLogSql({ behavior: 1, orderId, type: 0, userId, amount: afterDelBalance })) {
       errText = '订单流水记录错误'
     }
   }
-  if(!errText){
-    await logsSql({orderId,userId,type:20})
+  if (!errText) {
+    await logsSql({ orderId, type: 20 })
   }
 
-  
-  ctx.body = { "code":errText?-1:0, "msg":errText|| "success" }
+
+  ctx.body = { "code": errText ? -1 : 0, "msg": errText || "success" }
 })
 router.get('/statistics', async function (ctx, next) {
   ctx.body = { "code": 0, "data": { "count_id_close": 0, "count_id_no_confirm": 0, "count_id_no_pay": 0, "count_id_no_reputation": 0, "count_id_no_transfer": 0, "count_id_peisonging": 0, "count_id_success": 0, "count_id_wait_to_peisong": 0 }, "msg": "success" }

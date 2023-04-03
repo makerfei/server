@@ -3,7 +3,7 @@ const sql = require('../tool/sqlConfig')
 router.prefix('/api/wx')
 const { baseInfo, decipher_gcm, snsapi_userinfo, wxLoginOrLogon, get_client_ip } = require('../tool/wx')
 
-const { finishOrder, cashLogSql } = require('../tool/order')
+const { finishOrder, cashLogSql,logsSql } = require('../tool/order')
 
 
 var nodemailer = require('../tool/nodemailer')
@@ -48,7 +48,7 @@ router.all('/payCallBack', async function (ctx, next) {
             if (id && userId && transaction_id && !isPay) {
                 let orderRes = await finishOrder({ amountReal: total, orderId: id, transaction_id })
                 let cashRes = await cashLogSql({ behavior: 1, orderId: id, type: 1, userId, amount: total })
-                let logsRes = await logsSql({ orderId: id, userId, type: 21 })
+                let logsRes = await logsSql({ orderId: id, type: 21 })
             }
         }
 
