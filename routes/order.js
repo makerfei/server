@@ -524,14 +524,14 @@ router.get('/refundApply/info', async function (ctx, next) {
   let { orderId, orderGoodsId } = ctx.request.query
   let list = await sql.promiseCall({ sql: `select * from refundapply where  orderId =? and orderGoodsId=? order by id desc limit 0,1`, values: [orderId, orderGoodsId] }).then(({ error, results }) => {
     if (!error && results.length > 0) {
-      return { ...results[0], statusStr: refundsSatus(results[0].status), typeStr: refundsType(results[0].type) }
+      return { ...results[0],  amount:Number(results[0].amount/100).toFixed(2), statusStr: refundsSatus(results[0].status), typeStr: refundsType(results[0].type) }
     } else {
       return []
     }
   })
   ctx.body = {
     "code": 0,
-    data: list.length>0?   [{ baseInfo: { ...list } }]:null,
+    data: list.id>0?   [{ baseInfo: { ...list } }]:null,
     "msg": "success"
   }
 })
