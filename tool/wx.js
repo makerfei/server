@@ -116,11 +116,11 @@ module.exports.jsApicCeateOrder = async function (data) {
 
 
 //获取微信的基本信息
-module.exports.snsapi_userinfo = (openid) => {
+module.exports.snsapi_userinfo = (openid,access_token) => {
     return axios({
         url: "https://api.weixin.qq.com/sns/userinfo",
         params: {
-            access_token: global.access_token,
+            access_token: access_token,
             openid: openid,
             lang: 'zh_CN'
         }
@@ -145,7 +145,7 @@ module.exports.baseInfo = (code = '', state = '') => {
         }
     }).then(res => {
         if (res.data.access_token) {
-            global.access_token = res.data.access_token
+           // global.access_token = res.data.access_token
         }
         return res.data;
     })
