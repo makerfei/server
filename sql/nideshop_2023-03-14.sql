@@ -32,7 +32,7 @@ CREATE TABLE `amount` (
   `totalWithdraw` int(11) NOT NULL DEFAULT '0',
   `totleConsumed` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'banner'
 CREATE TABLE `banner` (
@@ -56,7 +56,7 @@ CREATE TABLE `cashlog` (
   `userId` int(11) NOT NULL DEFAULT '0',
   `amount` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=118 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=119 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'category'
 CREATE TABLE `category` (
@@ -112,7 +112,7 @@ CREATE TABLE `level` (
   `upgradeScore` int(11) NOT NULL DEFAULT '0',
   `upgradeSendScore` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'logistics'
 CREATE TABLE `logistics` (
@@ -138,7 +138,7 @@ CREATE TABLE `logs` (
   `orderId` int(11) NOT NULL DEFAULT '0',
   `userId` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=130 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=132 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'orderinfo'
 CREATE TABLE `orderinfo` (
@@ -160,7 +160,7 @@ CREATE TABLE `orderinfo` (
   `wxPayData` varchar(1000) NOT NULL DEFAULT '',
   `transaction_id` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=246 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=247 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'orderitem'
 CREATE TABLE `orderitem` (
@@ -175,7 +175,7 @@ CREATE TABLE `orderitem` (
   `goodsName` varchar(255) NOT NULL DEFAULT '',
   `pic` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=223 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=224 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'pics'
 CREATE TABLE `pics` (
@@ -270,4 +270,4 @@ CREATE TABLE `user` (
   `type` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_name` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4;
