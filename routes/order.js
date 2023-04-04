@@ -531,7 +531,7 @@ router.get('/refundApply/info', async function (ctx, next) {
   })
   ctx.body = {
     "code": 0,
-    data: [{ baseInfo: { ...list } }],
+    data: list.length>0?   [{ baseInfo: { ...list } }]:null,
     "msg": "success"
   }
 })
