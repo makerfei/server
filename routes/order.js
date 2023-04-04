@@ -6,7 +6,11 @@ const moment = require('moment');
 const { get_client_ip, jsApicCeateOrder } = require('../tool/wx')
 
 
-const { finishOrder, cashLogSql, logsSql, getStatusTxt, getLogsTypeList, orderClose, paySuccessEmailToSeller } = require('../tool/order')
+const { finishOrder, cashLogSql, logsSql, getStatusTxt,
+  getLogsTypeList, orderClose, paySuccessEmailToSeller,
+  refundsSatus, refundsType
+} = require('../tool/order');
+
 
 
 
@@ -89,7 +93,7 @@ router.post('/create', async function (ctx, next) {
   for (let i = 0; i < goodsList.length; i++) {
     let goods = goodsList[i]
     if (!errText) {
-      let goodsDateSql = await sql.promiseCall({ sql: `select minPrice as price,stores,id as goodsId,name as goodsName,pic from goods where id =? limit 0,1`, values: [goods.goodsId] });
+      let goodsDateSql = await sql.promiseCall({ sql: `select afterSale, minPrice as price,stores,id as goodsId,name as goodsName,pic from goods where id =? limit 0,1`, values: [goods.goodsId] });
       if (!goodsDateSql.error) {
         goodsList[i] = { ...goodsList[i], ...goodsDateSql?.results?.[0], property: '' }
         let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);
@@ -193,9 +197,9 @@ router.post('/create', async function (ctx, next) {
       if (!errText) {
         let item = goodsList[i]
         let orderItemSql = await sql.promiseCall({
-          sql: `INSERT INTO orderItem (goodsId, number, propertyChildIds, property, orderId, amountSingle, goodsName, pic)
-          VALUES(?,?,?,?,?,?,?,?);`,
-          values: [item.goodsId, item.number, item.propertyChildIds, item.property || '', resData.id, item.price, item.goodsName, item.pic]
+          sql: `INSERT INTO orderItem (goodsId, number, propertyChildIds, property, orderId, amountSingle, goodsName, pic,afterSale)
+          VALUES(?,?,?,?,?,?,?,?,?);`,
+          values: [item.goodsId, item.number, item.propertyChildIds, item.property || '', resData.id, item.price, item.goodsName, item.pic, item.afterSale]
         })
         if (orderItemSql.error) {
           errText = orderItemSql.error.message
@@ -243,7 +247,8 @@ router.get('/detail', async function (ctx, next) {
         amountLogistics: Number(resData.orderInfo.amountLogistics / 100).toFixed(2),
         dateAdd: moment(resData.orderInfo.dateAdd).format('YYYY-MM-DD hh:mm:ss'),
         dateClose: moment(resData.orderInfo.dateAdd).valueOf() + resData.orderInfo.closeMinute * 60 * 1000,
-        status: orderPayIsOver ? -1 : resData.orderInfo.status
+        status: orderPayIsOver ? -1 : resData.orderInfo.status,
+        statusStr: getStatusTxt(orderPayIsOver ? -1 : resData.orderInfo.status)
       }
     } else {
       errText = orderInfoSql.error.message
@@ -286,7 +291,7 @@ router.get('/detail', async function (ctx, next) {
 })
 
 router.post('/list', async function (ctx, next) {
-  let { page = 1, pageSize = 10, status, orderNumber = '' } = ctx.request.body;
+  let { page = 1, pageSize = 10, status, orderNumber = '', statusBatch = '' } = ctx.request.body;
   let userId = ctx.session.userId;
   let wheresql = ' '
   let errText = ''
@@ -295,9 +300,15 @@ router.post('/list', async function (ctx, next) {
   };
   if (status) {
     wheresql += `and status = ${status} `
+  } else if (statusBatch) {
+    wheresql += `and status >=1 and status<=4 `
   } else {
     wheresql += `and status >=-1 `
   }
+
+
+
+
   // if (orderNumber) {
   //   wheresql += `and orderNumber like '%${orderNumber}%' `
   // }
@@ -306,7 +317,7 @@ router.post('/list', async function (ctx, next) {
   if (!errText) {
     let orderInfoSql = await sql.promiseCall({
       sql: `select * from orderInfo where userId=? 
-    and orderNumber like ?
+    and orderNumber like ? 
     ${wheresql} order by id desc limit ${(page - 1) * pageSize},${pageSize}  `,
       values: [userId, `%${orderNumber}%`]
     })
@@ -464,7 +475,7 @@ router.post('/deliver', async function (ctx, next) {
 
   if (!errText) {
     //查询订单
-    orderSql = await sql.promiseCall({ sql: `select id, isNeedLogistics,status from orderinfo where orderNumber =?`, values: [orderNumber ] }).then(({ error, results }) => {
+    orderSql = await sql.promiseCall({ sql: `select id, isNeedLogistics,status from orderinfo where orderNumber =?`, values: [orderNumber] }).then(({ error, results }) => {
       if (!error && results.length > 0) {
         return results[0]
       } else {
@@ -479,36 +490,74 @@ router.post('/deliver', async function (ctx, next) {
     if (orderSql.isNeedLogistics == 0) {
       if (orderSql.status == 1) {
         //状态修改
-        await sql.promiseCall({ sql: `update orderinfo set status =2 where id =?`, values: [ orderSql.id] });
+        await sql.promiseCall({ sql: `update orderinfo set status =2 where id =?`, values: [orderSql.id] });
         //插入加入
-        await logsSql({ orderId:orderSql.id, type: 30 });
+        await logsSql({ orderId: orderSql.id, type: 30 });
         errText = '无物流 ，成功发货'
       } else {
         errText = '无物流 ,已经发过货，无需再次发货'
       }
     } else { //有物流的情况
       if (name && number) {
-        await sql.promiseCall({ sql: `update logistics set shipperName =?, trackingNumber = ?  where orderId =?`, values: [name, number, orderSql.id ] });
+        await sql.promiseCall({ sql: `update logistics set shipperName =?, trackingNumber = ?  where orderId =?`, values: [name, number, orderSql.id] });
         if (orderSql.status == 1) {
           //状态修改
-          await sql.promiseCall({ sql: `update orderinfo set status =2 where id =?`, values: [orderSql.id ] });
-          await logsSql({ orderId:orderSql.id, type: 30 });
+          await sql.promiseCall({ sql: `update orderinfo set status =2 where id =?`, values: [orderSql.id] });
+          await logsSql({ orderId: orderSql.id, type: 30 });
           errText = '物流信息已经填写，发货成功'
 
         } else {
           errText = '成功更新物流  之前已发货，现在更新了'
         }
-       
+
       } else {
         errText = '订单需要物流信息，填写物流'
       }
     }
   }
-
-
   ctx.body = errText
 
 })
+
+//退货详情
+router.get('/refundApply/info', async function (ctx, next) {
+  let { orderId, orderGoodsId } = ctx.request.query
+  let list = await sql.promiseCall({ sql: `select * from refundapply where  orderId =? and orderGoodsId=? order by id desc limit 0,1`, values: [orderId, orderGoodsId] }).then(({ error, results }) => {
+    if (!error && results.length > 0) {
+      return { ...results[0], statusStr: refundsSatus(results[0].status), typeStr: refundsType(results[0].type) }
+    } else {
+      return []
+    }
+  })
+  ctx.body = {
+    "code": 0,
+    data: [{ baseInfo: { ...list } }],
+    "msg": "success"
+  }
+})
+
+//撤销退货
+router.post('/refundApply/cancel', async function (ctx, next) {
+  let { orderId, orderGoodsId } = ctx.request.body
+  await sql.promiseCall({ sql: `update  refundapply set status =1 where orderId =? and orderGoodsId=? `, values: [orderId, orderGoodsId] }).then((error, results) => {
+
+  })
+  ctx.body = { "code": 0 }
+})
+//申请退货
+router.post('/refundApply/apply', async function (ctx, next) {
+  let { orderId, orderGoodsId, amount, type, logisticsStatus, reason, remark } = ctx.request.body
+  await sql.promiseCall({
+    sql: `insert  into refundapply (orderId, orderGoodsId, amount, type, logisticsStatus, reason, remark)
+value(?,?,?,?,?,?,?)
+`, values: [orderId, orderGoodsId, Number(Number(amount * 100).toFixed(0)), type, logisticsStatus, reason, remark]
+  })
+
+  ctx.body = { "code": 0 }
+})
+
+
+
 
 
 

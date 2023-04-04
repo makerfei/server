@@ -4,6 +4,38 @@ const fs = require('fs');
 const path = require('path');
 const art = require('art-template');
 const { error } = require('console');
+
+
+//退款文字转换
+let refundsSatus = function(status){
+    let resTxt = ''
+    switch (Number(status)) {
+        case 0: resTxt = '待处理'; break;
+        case 1: resTxt = '买家撤销'; break;
+        case 2: resTxt = '提交不符合要求'; break;
+        case 3: resTxt = '处理中...'; break;
+        case 4: resTxt = '已处理'; break;
+        default: break;
+    }
+    return resTxt
+}
+module.exports.refundsSatus = refundsSatus
+let refundsType = function(status){
+    let resTxt = ''
+    switch (Number(status)) {
+        case 0: resTxt = '待处理'; break;
+        case 1: resTxt = '再次申请'; break;
+        case 2: resTxt = '已拒绝'; break;
+        case 3: resTxt = '处理中'; break;
+        case 4: resTxt = '完成'; break;
+        default: break;
+    }
+    return resTxt
+}
+
+module.exports.refundsType = refundsType
+
+
 //获取状态文字
 let getStatusTxt = function (status) {
     let resTxt = ''
