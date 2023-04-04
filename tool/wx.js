@@ -41,11 +41,13 @@ module.exports.getSignature = async (url) => {
     let nonceStr = Math.random().toString(36).substr(2, 15);
     let timestamp = parseInt(new Date().getTime() / 1000) + '';
     let str = 'jsapi_ticket=' + ticket + '&noncestr=' + nonceStr + '&timestamp=' + timestamp + '&url=' + url;
-    shaObj = new jsSHA(str, 'TEXT');
-    let signature = shaObj.getHash('SHA-1', 'HEX');
+
+    let shasum = crypto.createHash('sha1')
+    let signature = shasum.update(str).digest('hex')
+
     return {
-        code :0,
-        data:{
+        code: 0,
+        data: {
             nonceStr,
             timestamp,
             signature
@@ -175,7 +177,8 @@ let getTicket = () => {
             access_token: global.access_token
         }
     }).then(res => {
-        console.log(res);
+        return res.data.ticket
+        console.log('----------ticket-----------', res.data.ticket);
     })
 }
 module.exports.getTicket = getTicket
