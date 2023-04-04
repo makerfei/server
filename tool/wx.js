@@ -99,7 +99,7 @@ module.exports.jsApicCeateOrder = async function (data) {
             }
             //进行注册
             if (!errText && !token && userInfo.openid) {
-                let token = await userInster({
+                 token = await userInster({
                     username: userInfo.nickname,
                     weixin_openid: userInfo.openid,
                     gender: userInfo.sex,
@@ -110,8 +110,6 @@ module.exports.jsApicCeateOrder = async function (data) {
             }
             res(token)
         })
-
-
     }
 
 
@@ -139,9 +137,7 @@ module.exports.baseInfo = (code = '', state = '') => {
             grant_type: 'authorization_code',
             appid: wxConfig.appid,
             secret: wxConfig.secret,
-            code: code,
-            grant_type: 'authorization_code'
-
+            code: code
         }
     }).then(res => {
         if (res.data.access_token) {
@@ -162,7 +158,9 @@ module.exports.getAccessToken = () => {
         }
     }).then(res => {
         if (res.data.access_token) {
-            global.access_token = res.data.access_token
+            global.access_token = res.data.access_token;
+           // 获取的
+           console.log('获取的全局token为',global.access_token);
         }
         //ctx中的全局变量
         // ctx.state.__HOST__ = '//'
