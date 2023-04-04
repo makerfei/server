@@ -1,12 +1,11 @@
 const router = require('koa-router')()
 const sql = require('../tool/sqlConfig')
 router.prefix('/api/wx')
-const { baseInfo, decipher_gcm, snsapi_userinfo, wxLoginOrLogon, get_client_ip } = require('../tool/wx')
+const { baseInfo, decipher_gcm, snsapi_userinfo, wxLoginOrLogon, get_client_ip,getSignature } = require('../tool/wx')
 
 const { finishOrder, cashLogSql,logsSql,paySuccessEmailToSeller } = require('../tool/order')
 
 
-var nodemailer = require('../tool/nodemailer')
 
 router.get('/wxLogin', async function (ctx, next) {
     const { code, state } = ctx.request.query;
@@ -53,13 +52,14 @@ router.all('/payCallBack', async function (ctx, next) {
         }
          //支付成功发送邮件给商户
         paySuccessEmailToSeller({  orderNumber:out_trade_no, summary,emailTotal,payWay:'微信jsapi',emailPayopenId,emailisRepeat,create_time})
-       
-    
-
-
     }
 
     ctx.body = { code: 0, data: {} }
+})
+
+
+router.get('/share', async function (ctx, next) {
+    ctx.body =await getSignature(ctx.request.query.url);
 })
 
 

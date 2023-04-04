@@ -12,6 +12,11 @@ let shortlink = (ctx, data, cookie) => {
                 returnUrl = `https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=Mzg3MzI2NDcwNw==#wechat_redirect`
             }
             break;
+            case 'img':
+                if (data.data === 'main') {
+                    returnUrl = `https://mgdg.shop/logo.jpg`
+                }
+                break;
         default:
             break;
     }

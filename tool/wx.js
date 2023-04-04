@@ -7,16 +7,15 @@ const wxConfig = require('../config/wx');
 const sql = require('../tool/sqlConfig')
 const { loginPoint, userInster } = require('../tool/loginOrLogon')
 const fs = require('fs')
-
+const privateKey = fs.readFileSync('./config/apiclient_key.pem'); // 秘钥
 const WxPay = require('wechatpay-node-v3')
+const crypto = require("crypto")
+const jsSHA = require('jssha');
 const pay = new WxPay({
     appid: wxConfig.appid,
     mchid: wxConfig.mch_id,
-    // publicKey: fs.readFileSync('../config/apiclient_cert.pem'), // 公钥
-    // privateKey: fs.readFileSync('../config/apiclient_key.pem'), // 秘钥
-
     publicKey: fs.readFileSync('./config/apiclient_cert.pem'), // 公钥
-    privateKey: fs.readFileSync('./config/apiclient_key.pem'), // 秘钥
+    privateKey,
     key: wxConfig.APIv3
 });
 
@@ -36,18 +35,34 @@ module.exports.get_client_ip = function (req) {
 
 
 
-
+//获取签名
+module.exports.getSignature = async (url) => {
+    let ticket = await getTicket();
+    let nonceStr = Math.random().toString(36).substr(2, 15);
+    let timestamp = parseInt(new Date().getTime() / 1000) + '';
+    let str = 'jsapi_ticket=' + ticket + '&noncestr=' + nonceStr + '&timestamp=' + timestamp + '&url=' + url;
+    shaObj = new jsSHA(str, 'TEXT');
+    let signature = shaObj.getHash('SHA-1', 'HEX');
+    return {
+        code :0,
+        data:{
+            nonceStr,
+            timestamp,
+            signature
+        }
+    }
+}
 
 
 //解析下单的接口
 module.exports.decipher_gcm = (ciphertext, associated_data, nonce) => {
-    return pay.decipher_gcm(ciphertext, associated_data, nonce,  wxConfig.APIv3)
+    return pay.decipher_gcm(ciphertext, associated_data, nonce, wxConfig.APIv3)
 }
 
 //微信支付jsapi下单
 module.exports.jsApicCeateOrder = async function (data) {
     const { total_fee, openid, body, bookingNo, create_ip } = data
-  
+
     let params = {
         "appid": wxConfig.appid,
         "mchid": wxConfig.mch_id,
@@ -68,9 +83,6 @@ module.exports.jsApicCeateOrder = async function (data) {
 
     return pay.transactions_jsapi(params)
 },
-
-
-
 
     module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo, ip }) {
         return new Promise(async (res, inj) => {
@@ -149,10 +161,22 @@ module.exports.getAccessToken = () => {
         if (res.data.access_token) {
             global.access_token = res.data.access_token
         }
-
-
         //ctx中的全局变量
         // ctx.state.__HOST__ = '//'
     })
 }
+
+//获取 ticket
+let getTicket = () => {
+    return axios({
+        url: "https://api.weixin.qq.com/cgi-bin/ticket/getticket",
+        params: {
+            type: 'jsapi',
+            access_token: global.access_token
+        }
+    }).then(res => {
+        console.log(res);
+    })
+}
+module.exports.getTicket = getTicket
 
