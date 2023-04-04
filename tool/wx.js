@@ -39,8 +39,8 @@ module.exports.get_client_ip = function (req) {
 module.exports.getSignature = async (url) => {
     let ticket = await getTicket();
     let nonceStr = Math.random().toString(36).substr(2, 15);
-    let timestamp = parseInt(new Date().getTime() / 1000) + '';
-    let str = 'jsapi_ticket=' + ticket + '&noncestr=' + nonceStr + '&timestamp=' + timestamp + '&url=' + url;
+    let timeStamp = parseInt(new Date().getTime() / 1000) + '';
+    let str = 'jsapi_ticket=' + ticket + '&noncestr=' + nonceStr + '&timestamp=' + timeStamp + '&url=' + url;
 
     let shasum = crypto.createHash('sha1')
     let signature = shasum.update(str).digest('hex')
@@ -49,8 +49,9 @@ module.exports.getSignature = async (url) => {
         code: 0,
         data: {
             nonceStr,
-            timestamp,
-            signature
+            timeStamp,
+            signature,
+            appId: wxConfig.appid
         }
     }
 }
