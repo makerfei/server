@@ -3,8 +3,7 @@ const sql = require('../tool/sqlConfig')
 const logisticsApi = require('../tool/logisticsApi')
 router.prefix('/api/order')
 const moment = require('moment');
-const { get_client_ip, jsApicCeateOrder } = require('../tool/wx')
-
+const { jsApicGetOrderPayInfo, get_client_ip, wxQRcodePayApi } = require('../tool/wx')
 
 const { finishOrder, cashLogSql, logsSql, getStatusTxt,
   getLogsTypeList, orderClose, paySuccessEmailToSeller,
@@ -84,7 +83,6 @@ router.post('/create', async function (ctx, next) {
   let orderNumber = moment(new Date()).format('YYYYMMDDHHmmss') + '' + Number(Math.random() * 100).toFixed(0)
   let goodsList = JSON.parse(goodsJsonStr);
   let resData = {};
-  let wxpayInfo = {};
   // [{"goodsId":2,"number":1,"propertyChildIds":""}]
 
   let errText = ''
@@ -139,29 +137,14 @@ router.post('/create', async function (ctx, next) {
     goodsNumber += goodsList.length;
   }
 
-  //微信支付信息
-  if (!errText && balanceSwitch == 2) {
-    let create_ip = get_client_ip(ctx.req);
 
-    let userSql = await sql.promiseCall({ sql: `select weixin_openid  from user where id=? limit 0,1`, values: [userId] })
-    if (!userSql.error && userSql.results.length > 0) {
-      wxpayInfo = await jsApicCeateOrder({
-        total_fee: amount,
-        openid: userSql.results[0].weixin_openid,
-        body: '街道购',
-        bookingNo: orderNumber,
-        create_ip
-      });
-      wxpayInfo.packageData = wxpayInfo.package;
-    }
-  }
 
   //放入数据库 
   if (!errText) {
     let orderInfoSql = await sql.promiseCall({
-      sql: `INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark,balanceSwitch,wxPayData)
-     VALUES(?,?,?,?,?,?,?,?,?);`,
-      values: [orderNumber, amount, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, userId, remark, balanceSwitch, JSON.stringify(wxpayInfo)]
+      sql: `INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark,balanceSwitch)
+     VALUES(?,?,?,?,?,?,?,?);`,
+      values: [orderNumber, amount, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, userId, remark, balanceSwitch]
     })
     if (orderInfoSql.error) {
       errText = orderInfoSql.error.message
@@ -210,11 +193,11 @@ router.post('/create', async function (ctx, next) {
 
   // 创建下单日志
   if (!errText) {
-    await logsSql({ orderId: resData.id, type: balanceSwitch == 1 ? 10 : 11 })
+    await logsSql({ orderId: resData.id, type: balanceSwitch == 1 ? 10 : balanceSwitch == 2 ? 11 : 12 })
   }
 
   if (!errText) {
-    ctx.body = { "code": 0, "data": { orderData: resData, wxpayInfo }, "msg": "success" }
+    ctx.body = { "code": 0, "data": { orderData: resData }, "msg": "success" }
   } else {
     ctx.body = { "code": -1, msg: errText }
   }
@@ -233,7 +216,7 @@ router.get('/detail', async function (ctx, next) {
       resData.orderInfo = orderInfoSql.results[0] || {}
       let orderPayIsOver = false;
       //判断订单超时主题
-      if (resData.orderInfo.status == 0 && resData.orderInfo.balanceSwitch == 2) {
+      if (resData.orderInfo.status == 0 && resData.orderInfo.balanceSwitch == 2 || resData.orderInfo.balanceSwitch == 3) {
         if (moment(resData.orderInfo.dateAdd).valueOf() + resData.orderInfo.closeMinute * 60 * 1000 < moment().valueOf()) {
           //超时自动关闭订单
           orderPayIsOver = true;
@@ -395,6 +378,25 @@ router.post('/close', async function (ctx, next) {
 
 })
 
+
+//获取到公众号支付的二维码
+router.get('/wxQRcodePayApi', async (ctx, next) => {
+  ctx.body = { code: 0, data: await wxQRcodePayApi(ctx.request.query) }
+})
+
+
+
+// 获取微信的支付信息
+router.post('/getWxjaspiInfoByOrder', async function (ctx, next) {
+  let payInfo = await jsApicGetOrderPayInfo({  type:ctx.request.body.type,  orderId: ctx.request.body.orderId, create_ip: get_client_ip(ctx.req) });
+  ctx.body = {
+    code: payInfo.msg ? -1 : 0,
+    data: {...payInfo.wxpayInfo,packageData:payInfo.wxpayInfo.package} ,
+    msg: payInfo.msg || 'SUCCESS'
+
+  }
+})
+
 //进行付款 余额的支付方式
 router.post('/pay', async function (ctx, next) {
   let { orderId } = ctx.request.body;
@@ -524,14 +526,14 @@ router.get('/refundApply/info', async function (ctx, next) {
   let { orderId, orderGoodsId } = ctx.request.query
   let list = await sql.promiseCall({ sql: `select * from refundapply where  orderId =? and orderGoodsId=? order by id desc limit 0,1`, values: [orderId, orderGoodsId] }).then(({ error, results }) => {
     if (!error && results.length > 0) {
-      return { ...results[0],  amount:Number(results[0].amount/100).toFixed(2), statusStr: refundsSatus(results[0].status), typeStr: refundsType(results[0].type) }
+      return { ...results[0], amount: Number(results[0].amount / 100).toFixed(2), statusStr: refundsSatus(results[0].status), typeStr: refundsType(results[0].type) }
     } else {
       return []
     }
   })
   ctx.body = {
     "code": 0,
-    data: list.id>0?   [{ baseInfo: { ...list } }]:null,
+    data: list.id > 0 ? [{ baseInfo: { ...list } }] : null,
     "msg": "success"
   }
 })

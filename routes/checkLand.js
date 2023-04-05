@@ -55,7 +55,7 @@ router.post('/login', async function (ctx, next) {
             msg: "success"
         }
     } else {
-        ctx.body = { code: -1, msg: "登录失败，密码或账号错误" }
+        ctx.body = { code: -9999, msg: "登录失败，密码或账号错误" }
     }
 })
 

@@ -65,12 +65,12 @@ const getCashLogTypeList = function (status) {
 
 module.exports.getCashLogTypeList = getCashLogTypeList
 
-
 const getLogsTypeList = function (status) {
     let resTxt = ''
     switch (Number(status)) {
         case 10: resTxt = '余额下单'; break;
         case 11: resTxt = '微信下单'; break;
+        case 12: resTxt = '扫码下单'; break;
         case 18: resTxt = '取消订单'; break;
         case 19: resTxt = '删除订单'; break;
         case 20: resTxt = '余额支付'; break;
