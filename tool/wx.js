@@ -11,6 +11,7 @@ const privateKey = fs.readFileSync('./config/apiclient_key.pem'); // 秘钥
 const WxPay = require('wechatpay-node-v3')
 const crypto = require("crypto")
 const jsSHA = require('jssha');
+const moment = require('moment');
 const pay = new WxPay({
     appid: wxConfig.appid,
     mchid: wxConfig.mch_id,
@@ -37,7 +38,7 @@ module.exports.get_client_ip = function (req) {
 
 //获取签名
 module.exports.getSignature = async (url) => {
-    let ticket = await getTicket();
+    let ticket =  global.ticket;
     let nonceStr = Math.random().toString(36).substr(2, 15);
     let timeStamp = parseInt(new Date().getTime() / 1000) + '';
     let str = 'jsapi_ticket=' + ticket + '&noncestr=' + nonceStr + '&timestamp=' + timeStamp + '&url=' + url;
@@ -72,19 +73,23 @@ module.exports.jsApicCeateOrder = async function (data) {
         "out_trade_no": bookingNo,
         "description": body,
         "notify_url": wxConfig.notify_url,
+        //'time_expire':  '2023-04-05T23:34:56+08:00',   //moment((moment().valueOf()+17000*1000)).format('yyyy-MM-DDTHH:mm:ss+TIMEZONE') ,
         "amount": {
             "total": Number(total_fee),
             "currency": "CNY"
         },
-        "payer": {
-            "openid": openid
-        },
+        // "payer": {
+        //     "openid": openid
+        // },
         scene_info: {
             payer_client_ip: create_ip,
+            "h5_info": {
+                "type": "Wap"
+            }
         },
     }
-
-    return pay.transactions_jsapi(params)
+    return pay.transactions_h5(params)
+    //return pay.transactions_jsapi(params)
 },
 
     module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo, ip }) {
@@ -146,29 +151,40 @@ module.exports.baseInfo = (code = '', state = '') => {
         return res.data;
     })
 }
-//获取 getAccessToken 
-module.exports.getAccessToken = () => {
-    return axios({
-        url: "https://api.weixin.qq.com/cgi-bin/token",
-        params: {
-            grant_type: "client_credential",
-            appid: wxConfig.appid,
-            secret: wxConfig.secret,
 
-        }
-    }).then(res => {
-        if (res.data.access_token) {
-            global.access_token = res.data.access_token;
-           // 获取的
-           console.log('获取的全局token为',global.access_token);
-        }
-        //ctx中的全局变量
-        // ctx.state.__HOST__ = '//'
+//获取 getAccessToken 
+let getAccessToken = () => {
+
+    return new Promise(async(resolve, reject) => {
+       await axios({
+            url: "https://api.weixin.qq.com/cgi-bin/token",
+            params: {
+                grant_type: "client_credential",
+                appid: wxConfig.appid,
+                secret: wxConfig.secret,
+    
+            }
+        }).then(res => {
+            if (res.data.access_token) {
+                global.access_token = res.data.access_token;
+               // 获取的
+               console.log('获取的全局token为',global.access_token);
+            }
+            //ctx中的全局变量
+            // ctx.state.__HOST__ = '//'
+        })
+
+        await getTicket();
+        resolve();
+
     })
+    
 }
+module.exports.getAccessToken =getAccessToken;
 
 //获取 ticket
 let getTicket = () => {
+    console.log('----------ticket:global.access_token-----------', global.access_token);
     return axios({
         url: "https://api.weixin.qq.com/cgi-bin/ticket/getticket",
         params: {
@@ -176,8 +192,12 @@ let getTicket = () => {
             access_token: global.access_token
         }
     }).then(res => {
-        return res.data.ticket
         console.log('----------ticket-----------', res.data.ticket);
+        global.ticket = res.data.ticket
+        return res.data.ticket
+       
+    }).catch(err=>{
+        console.log('----------ticket err-----------', JSON.stringify(res));
     })
 }
 module.exports.getTicket = getTicket

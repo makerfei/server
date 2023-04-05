@@ -10,7 +10,7 @@ let shortlink = (ctx, data, cookie) => {
 
     switch (data.type) {
         case 'main':
-            let targetMain =  encodeURIComponent(`https://www.mgdg.shop/#/home?shareId=${shareId}`)
+            let targetMain =  encodeURIComponent(`https://www.mgdg.shop/index.html#/home?shareId=${shareId}`)
             returnUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxb3ac0230f6387556&redirect_uri=${targetMain}&response_type=code&scope=snsapi_userinfo&state=snsapi_userinfo#wechat_redirect`
             break;
         case 'wx':
@@ -19,7 +19,7 @@ let shortlink = (ctx, data, cookie) => {
             }
             break;
         case 'goods':
-            let targetGoods =  encodeURIComponent(`https://www.mgdg.shop/#/good/detail?id=${data.data}&shareId=${shareId}`)
+            let targetGoods =  encodeURIComponent(`https://www.mgdg.shop/index.html#/good/detail?id=${data.data}&shareId=${shareId}`)
             returnUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxb3ac0230f6387556&redirect_uri=${targetGoods}&response_type=code&scope=snsapi_userinfo&state=snsapi_userinfo#wechat_redirect`
             break;
         default:
