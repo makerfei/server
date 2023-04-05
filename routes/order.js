@@ -388,7 +388,7 @@ router.get('/wxQRcodePayApi', async (ctx, next) => {
 
 // 获取微信的支付信息
 router.post('/getWxjaspiInfoByOrder', async function (ctx, next) {
-  let payInfo = await jsApicGetOrderPayInfo({  type:ctx.request.body.type,  orderId: ctx.request.body.orderId, create_ip: get_client_ip(ctx.req) });
+  let payInfo = await jsApicGetOrderPayInfo({  openid:ctx.request.body.openid ,  type:ctx.request.body.type,  orderId: ctx.request.body.orderId, create_ip: get_client_ip(ctx.req) });
   ctx.body = {
     code: payInfo.msg ? -1 : 0,
     data: {...payInfo.wxpayInfo,packageData:payInfo.wxpayInfo.package} ,

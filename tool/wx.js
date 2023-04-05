@@ -14,6 +14,8 @@ const jsSHA = require('jssha');
 const moment = require('moment');
 const QRCode = require("qrcode");
 const { error } = require("console");
+const shortlink = require('../tool/shortlink')
+
 const pay = new WxPay({
     appid: wxConfig.appid,
     mchid: wxConfig.mch_id,
@@ -61,13 +63,12 @@ module.exports.getSignature = async (url) => {
         }
     }
 }
-
 module.exports.wxQRcodePayApi = ({ orderId, token }) => {
-    return QRCode.toDataURL(`http://192.168.0.101/api/shortlink/pay/${orderId}?token=${token}`)
+    return QRCode.toDataURL(shortlink({token},{type:'pay',data:orderId}))
 }
 
 //微信支付jsapi下单 查询订单的微信支付信息，如果有 就直接返回 没有就进行下单
-module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip, type = 'h5' }) {  //为h5 或wx
+module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip,openid='', type = 'wx' }) {  //为h5 或wx
     let errText = ''
     let orderIdInfo = {};//订单信息
     let userInfo = {} //用户信息
@@ -93,12 +94,12 @@ module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip, typ
         userInfo = await sql.promiseCall({ sql: `select weixin_openid  from user where id=?  limit 0,1`, values: [orderIdInfo.userId] }).then(({ error, results }) => {
             return !error && results.length > 0 && results[0] || {}
         })
-        if (!userInfo.weixin_openid && type == 'wx') {
+        if ((!userInfo.weixin_openid&&!openid) && type == 'wx') {
             errText = '用户请先绑定微信'
         }
         //新微信支付信息创建
         if (!errText) {
-            resData.wxpayInfo = await jsApicCeateOrder({ type, total_fee: orderIdInfo.amount, openid: userInfo.weixin_openid, body: '街道购支付', bookingNo: orderIdInfo.orderNumber, create_ip })
+            resData.wxpayInfo = await jsApicCeateOrder({ type, total_fee: orderIdInfo.amount, openid:openid|| userInfo.weixin_openid, body: '街道购支付', bookingNo: orderIdInfo.orderNumber, create_ip })
         }
     }
     resData.msg = errText;
@@ -137,18 +138,24 @@ let jsApicCeateOrder = async function (data) {
 }
 module.exports.jsApicCeateOrder = jsApicCeateOrder;
 
-module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo, ip }) {
+module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo, ip,intoken='' }) {
     return new Promise(async (res, inj) => {
         let token = '';
         let errText = ''
-        //检验是否注册过
+        //检验是否注册过 微信是否注册过
         let idRes = await sql.promiseCall({ sql: `select id  from user where weixin_openid = ?`, values: [wxInfo.openid] });
         if (!idRes.error && idRes.results.length > 0) {
             token = idRes.results[0].id;
             await loginPoint({ ip: ip, userId: token })
         }
-        //进行注册
-        if (!errText && !token && userInfo.openid) {
+
+        //不要绑定机制
+        //如果这个号没有注册过，就进行绑定 且从其他地方传来intoken
+        // if(!errText &&intoken&&!token && userInfo.openid){
+        //     await sql.promiseCall({sql:`update user set weixin_openid = ? where id =? and weixin_openid = ''`,values:[userInfo.openid,intoken]});
+        // }else
+        
+        if (!errText && !token && userInfo.openid) {//进行注册
             token = await userInster({
                 username: userInfo.nickname,
                 weixin_openid: userInfo.openid,
