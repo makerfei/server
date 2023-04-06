@@ -14,7 +14,7 @@ CREATE TABLE `address` (
   `isDefault` tinyint(1) NOT NULL DEFAULT '0',
   `cityId` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'amount'
 CREATE TABLE `amount` (
@@ -32,7 +32,7 @@ CREATE TABLE `amount` (
   `totalWithdraw` int(11) NOT NULL DEFAULT '0',
   `totleConsumed` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'banner'
 CREATE TABLE `banner` (
@@ -56,7 +56,7 @@ CREATE TABLE `cashlog` (
   `userId` int(11) NOT NULL DEFAULT '0',
   `amount` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=119 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=131 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'category'
 CREATE TABLE `category` (
@@ -94,7 +94,7 @@ CREATE TABLE `goods` (
   `afterSale` varchar(50) NOT NULL DEFAULT '',
   `status` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'level'
 CREATE TABLE `level` (
@@ -112,7 +112,7 @@ CREATE TABLE `level` (
   `upgradeScore` int(11) NOT NULL DEFAULT '0',
   `upgradeSendScore` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'logistics'
 CREATE TABLE `logistics` (
@@ -128,7 +128,7 @@ CREATE TABLE `logistics` (
   `trackingNumber` varchar(255) NOT NULL DEFAULT '',
   `shipperName` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'logs'
 CREATE TABLE `logs` (
@@ -138,7 +138,7 @@ CREATE TABLE `logs` (
   `orderId` int(11) NOT NULL DEFAULT '0',
   `userId` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=132 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=308 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'orderinfo'
 CREATE TABLE `orderinfo` (
@@ -160,7 +160,7 @@ CREATE TABLE `orderinfo` (
   `wxPayData` varchar(1000) NOT NULL DEFAULT '',
   `transaction_id` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=247 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=382 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'orderitem'
 CREATE TABLE `orderitem` (
@@ -175,7 +175,7 @@ CREATE TABLE `orderitem` (
   `goodsName` varchar(255) NOT NULL DEFAULT '',
   `pic` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=224 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=359 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'pics'
 CREATE TABLE `pics` (
@@ -205,7 +205,7 @@ CREATE TABLE `refundapply` (
   `status` int(11) NOT NULL DEFAULT '0',
   `type` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'reputations'
 CREATE TABLE `reputations` (
@@ -217,7 +217,7 @@ CREATE TABLE `reputations` (
   `remark` varchar(255) NOT NULL,
   `dateAdd` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'shoppingcart'
 CREATE TABLE `shoppingcart` (
@@ -268,6 +268,5 @@ CREATE TABLE `user` (
   `province` varchar(50) NOT NULL DEFAULT '',
   `city` varchar(50) NOT NULL DEFAULT '',
   `type` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `user_name` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4;
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4;
