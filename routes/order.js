@@ -393,7 +393,6 @@ router.post('/getWxjaspiInfoByOrder', async function (ctx, next) {
     code: payInfo.msg ? -1 : 0,
     data: {...payInfo.wxpayInfo,packageData:payInfo.wxpayInfo.package} ,
     msg: payInfo.msg || 'SUCCESS'
-
   }
 })
 

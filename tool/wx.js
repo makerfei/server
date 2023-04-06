@@ -64,11 +64,11 @@ module.exports.getSignature = async (url) => {
     }
 }
 module.exports.wxQRcodePayApi = ({ orderId, token }) => {
-    return QRCode.toDataURL(shortlink({token},{type:'pay',data:orderId}))
+    return QRCode.toDataURL(shortlink({ token }, { type: 'pay', data: orderId }))
 }
 
 //微信支付jsapi下单 查询订单的微信支付信息，如果有 就直接返回 没有就进行下单
-module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip,openid='', type = 'wx' }) {  //为h5 或wx
+module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip, openid = '', type = 'wx' }) {  //为h5 或wx
     let errText = ''
     let orderIdInfo = {};//订单信息
     let userInfo = {} //用户信息
@@ -82,8 +82,8 @@ module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip,open
     }
     let hasRigthPayInfo = false;
     if (!errText) {
-        let wxPayData =    orderIdInfo.wxPayData&&JSON.parse(orderIdInfo.wxPayData)||{}
-        if (wxPayData.status == 200&&((type == 'h5' && wxPayData.h5_url) || (wxPayData.prepay_id && type == 'wx'))) {
+        let wxPayData = orderIdInfo.wxPayData && JSON.parse(orderIdInfo.wxPayData) || {}
+        if (wxPayData.status == 200 && ((type == 'native' && wxPayData.code_url || type == 'h5' && wxPayData.h5_url) || (wxPayData.prepay_id && type == 'wx'))) {
             hasRigthPayInfo = true
         }
     }
@@ -94,12 +94,12 @@ module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip,open
         userInfo = await sql.promiseCall({ sql: `select weixin_openid  from user where id=?  limit 0,1`, values: [orderIdInfo.userId] }).then(({ error, results }) => {
             return !error && results.length > 0 && results[0] || {}
         })
-        if ((!userInfo.weixin_openid&&!openid) && type == 'wx') {
+        if ((!userInfo.weixin_openid && !openid) && type == 'wx') {
             errText = '用户请先绑定微信'
         }
         //新微信支付信息创建
         if (!errText) {
-            resData.wxpayInfo = await jsApicCeateOrder({ type, total_fee: orderIdInfo.amount, openid:openid|| userInfo.weixin_openid, body: '街道购支付', bookingNo: orderIdInfo.orderNumber, create_ip })
+            resData.wxpayInfo = await jsApicCeateOrder({ type, total_fee: orderIdInfo.amount, openid: openid || userInfo.weixin_openid, body: '街道购支付', bookingNo: orderIdInfo.orderNumber, create_ip })
         }
     }
     resData.msg = errText;
@@ -124,13 +124,16 @@ let jsApicCeateOrder = async function (data) {
         "payer": type == 'wx' ? {
             "openid": openid,
         } : undefined,
-        scene_info: {
+        scene_info: type == 'native'?{
             payer_client_ip: create_ip,
             h5_info: type == 'h5' ? { "type": "Wap" } : undefined
-        },
+        }:undefined,
     }
     //
-    let payinf = type == 'h5' ? await pay.transactions_h5(params) : type == 'wx' ? await pay.transactions_jsapi(params) : {};
+    let payinf = type == 'h5' ? await pay.transactions_h5(params) :
+                 type == 'wx' ? await pay.transactions_jsapi(params) : 
+                 type == 'native' ? await pay.transactions_native(params) : 
+                 {};
     //保存支付的信息
     sql.promiseCall({ sql: `update orderinfo set wxPayData = ? where  orderNumber = ?`, values: [JSON.stringify(payinf), bookingNo] })
     //返回支付
@@ -138,7 +141,7 @@ let jsApicCeateOrder = async function (data) {
 }
 module.exports.jsApicCeateOrder = jsApicCeateOrder;
 
-module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo, ip,intoken='' }) {
+module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo, ip }) {
     return new Promise(async (res, inj) => {
         let token = '';
         let errText = ''
@@ -154,7 +157,7 @@ module.exports.wxLoginOrLogon = async function ({ wxInfo, userInfo, ip,intoken='
         // if(!errText &&intoken&&!token && userInfo.openid){
         //     await sql.promiseCall({sql:`update user set weixin_openid = ? where id =? and weixin_openid = ''`,values:[userInfo.openid,intoken]});
         // }else
-        
+
         if (!errText && !token && userInfo.openid) {//进行注册
             token = await userInster({
                 username: userInfo.nickname,

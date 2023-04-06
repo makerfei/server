@@ -4,25 +4,34 @@ const fs = require('fs')
 const path = require('path')
 const email = require('../tool/nodemailer')
 const shortlink = require('../tool/shortlink')
-const {jsApicCeateOrder,get_client_ip} = require('../tool/wx')
+const { jsApicCeateOrder, get_client_ip } = require('../tool/wx')
 router.prefix('/api')
+const QRCode = require("qrcode");
 
 
-
-router.get('/shortlink/:type/:data',async function(ctx, next){
+router.get('/shortlink/:type/:data', async function (ctx, next) {
   // ctx.cookies.set('a', '100')
   // // 获取cookie(结构化koa2已经做好)
   // console.log('cookie is', ctx.cookies.get('a'))
 
- ctx.redirect(shortlink(ctx.request.query,ctx.params));
+  ctx.redirect(shortlink(ctx.request.query, ctx.params));
 })
-router.get('/test',async (ctx, next)=>{
+
+router.get('/urlTobase64', async function (ctx, next) {
+  let { url = '' } = ctx.request.query;
+  ctx.body = { code: 0, data: await QRCode.toDataURL(url) }
+})
+
+
+
+
+router.get('/test', async (ctx, next) => {
   ctx.body = await jsApicCeateOrder({
     total_fee: 10,
     openid: 'oQ1Td5gcOjqlBKQalxGc7Y6DV1r8',
-    body:'街道购',
+    body: '街道购',
     bookingNo: '21212322232323233434',
-    create_ip:get_client_ip(ctx.req)
+    create_ip: get_client_ip(ctx.req)
   });
 })
 
@@ -33,7 +42,7 @@ router.get('/test',async (ctx, next)=>{
 
 router.get('/banner/list', async function (ctx, next) {
   const { type } = ctx.request.query;
-  let bannerSql = await sql.promiseCall({sql:`select * from banner where type = ? ORDER BY paixu ASC`,values:[type]});
+  let bannerSql = await sql.promiseCall({ sql: `select * from banner where type = ? ORDER BY paixu ASC`, values: [type] });
   if (!bannerSql.error) {
     ctx.body = { "code": 0, "data": bannerSql.results, "msg": "success" }
   } else {
