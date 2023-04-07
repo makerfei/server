@@ -24,8 +24,9 @@ router.post('/loginAdmin', async function (ctx, next) {
     } else {
         errText = '账号密码错误'
     }
-
     if (!errText) {
+        ctx.session.userId =Number(res.results[0].id);
+        ctx.session.userType =Number(res.results[0].type);
         ctx.body = {
             status: 'ok',
             type,
@@ -178,7 +179,7 @@ const adminIndex = (app) => {
         }
         let needLand = true
         if ((ctx.originalUrl.indexOf('/api/user') === 0 ||
-            ctx.originalUrl.indexOf('/api/admin') === 0 ||
+            (ctx.originalUrl.indexOf('/api/admin') === 0 &&!ctx.session.userType)||
             // ctx.originalUrl.indexOf('/api/dfs') === 0 ||
             ctx.originalUrl.indexOf('/api/shopping-cart') === 0 ||
             ctx.originalUrl.indexOf('/api/order') === 0)
@@ -187,6 +188,7 @@ const adminIndex = (app) => {
         } else {
             needLand = false;
         }
+
         if (needLand) {
             ctx.body = { 'code': -999, msg: "请登录" }
         } else {
