@@ -190,7 +190,7 @@ const adminIndex = (app) => {
         }
 
         if (needLand) {
-            ctx.body = { 'code': -999, msg: "请登录" }
+            ctx.body = { 'code': -999, msg: "请登录", status: 'error' }
         } else {
             await next();
         }
