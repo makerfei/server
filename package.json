@@ -17,6 +17,8 @@
     "debug": "^4.1.1",
     "formidable": "^2.1.1",
     "fs": "^0.0.1-security",
+    "imagemin": "^8.0.1",
+    "images": "^3.2.4",
     "jssha": "^3.3.0",
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",

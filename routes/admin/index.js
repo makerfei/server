@@ -167,9 +167,9 @@ router.get('/goods/detail', async function (ctx, next) {
         return {
           // ...item,
           uid: item.id,
-          name: item.type ? (item.pic + '  视频') : item.pic,
+          name:  item.pic,
           status: 'done',
-          url: item.type ? (item.pic + '_0.jpg') : item.pic,
+          url: item.pic,
           saveType: item.type
         }
       }), ...orderInfoSql.results[0] || {}
