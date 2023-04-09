@@ -23,7 +23,7 @@ router.post('/upload/file', async function (ctx, next) {
         form.parse(ctx.req, async function (err, fields, files) {
             let filePath = files.upfile.filepath // 本地文件路径
             let cutSize = fields.cutSize || 1;
-            let nodeCut = fields.nodeCut || true
+            let nodeCut = fields.nodeCut!=='false';
 
 
             //创建分类文件夹
