@@ -51,7 +51,7 @@ app.use(views(__dirname + '/views', {
   extension: 'pug'
 }))
 app.use(require('koa-static')(__dirname + '/public'))
-
+app.use(require('koa-static')(__dirname + '/admin'))
 // logger
 // app.use(async (ctx, next) => {
 //   const start = new Date()

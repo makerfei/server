@@ -5,7 +5,8 @@ var formidable = require('formidable');
 const path = require('path')
 const fs = require('fs')
 const sms = require('../config/sms')
-var images = require("images");
+const images = require("images");
+const moment = require('moment');
 
 var COS = require('cos-nodejs-sdk-v5');
 var cos = new COS({
@@ -16,21 +17,33 @@ var cos = new COS({
 
 router.post('/upload/file', async function (ctx, next) {
     let form = new formidable.IncomingForm()
-   
+
 
     ctx.body = await new Promise((res, inj) => {
         form.parse(ctx.req, async function (err, fields, files) {
+            let filePath = files.upfile.filepath // 本地文件路径
+            let cutSize = fields.cutSize || 1;
+            let nodeCut = fields.nodeCut || true
+
+
+            //创建分类文件夹
+            let dayFile = new moment().format('YYYY_MM_DD');
+            const dayFilePath = path.join(__dirname, `../public/upload/${dayFile}`)
+            let stats = fs.existsSync(dayFilePath)
+            if (!stats) fs.mkdirSync(dayFilePath, true)
+
 
             let originType = String(files.upfile.originalFilename).split('.')[1] || 'png';
-            let canCut =  originType=='png'||originType=='jpeg'||originType=='jpg'
-            let fileType = canCut? 'jpg':originType; 
+            let canCut = originType == 'png' || originType == 'jpeg' || originType == 'jpg'
+            let fileType = canCut ? 'jpg' : originType;
+
             let fileName = new Date().getTime();
-            let fullPathCos = `img/${fileName}.${fileType}`
+            let fullPathCos = `img/${dayFile}/${fileName}.${fileType}`
             // fs.copyFileSync(files.upfile.filepath, path.join(__dirname, `../public/upload`, `${fileName}.${fileType}`));
-            let filePath = files.upfile.filepath // 本地文件路径
+
             //如果是图片且可以进行裁剪
-            if(canCut){
-                filePath = await imgAndCompressCut(filePath, path.join(__dirname, `../public/upload`, `${fileName}.${fileType}`))
+            if (canCut) {
+                filePath = await imgAndCompressCut(filePath, path.join(__dirname, `../public/upload/${dayFile}`, `${fileName}.${fileType}`), cutSize,nodeCut)
             }
             //上传到cos
             let cosLink = await upToCos(filePath, fullPathCos)
@@ -42,16 +55,24 @@ router.post('/upload/file', async function (ctx, next) {
 
 //图片裁剪
 
-const imgAndCompressCut = (filePath, fullLocalPath) => {
+const imgAndCompressCut = (filePath, fullLocalPath, cutSize = 1, nodeCut = true) => {
     return new Promise(async (res, inj) => {
         let img = images(filePath);
         let width = img._handle.width;
         let height = img._handle.height;
-        let reSizeWidth = width > height ? height : width;
-        let left = width > height ? Number(Number((width - height) / 2).toFixed(0)) : 0;
-        let top = width < height ? Number(Number((height - width) / 2).toFixed(0)) : 0;
-        await images(img, left, top, reSizeWidth, reSizeWidth).resize(750).save(fullLocalPath, {
-            quality: 80            //压缩图片质量
+
+        let reSizeWidth = width;
+        let reSizeHeigth = height;
+        let left = 0;
+        let top = 0
+        if (nodeCut) {
+            reSizeWidth = height * cutSize > width ? width : height * cutSize;
+            reSizeHeigth = height * cutSize > width ? width / cutSize : height;
+            left = height * cutSize > width ? 0 : (width - reSizeWidth) / 2;
+            top = height * cutSize > width ? (height - reSizeHeigth) / 2 : 0;
+        }
+        await images(img, left, top, reSizeWidth, reSizeHeigth).resize(750).save(fullLocalPath, {
+            quality: 90          //压缩图片质量
         });
         res(fullLocalPath)
     })

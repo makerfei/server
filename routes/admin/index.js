@@ -127,6 +127,39 @@ router.get('/category/all', async function (ctx, next) {
   }
 })
 
+
+//banner管理
+router.post('/banner/change', async function (ctx, next) {
+  let { id = '', picUrl = '', linkUrl = '', title = '', paixu = '' ,remark='',type=''} = ctx.request.body;
+  if (id && picUrl) {
+    await sql.promiseCall({
+      sql: `update banner set  picUrl = ?, linkUrl = ?, title = ?, paixu = ? ,remark=?,type=? where id=?`
+      , values: [ picUrl , linkUrl , title , paixu  ,remark,type, id]
+    })
+  } else if (picUrl) {
+    await sql.promiseCall({
+      sql: ` INSERT INTO banner ( picUrl , linkUrl , title , paixu  ,remark,type) VALUES(?,?,?,?,?,?)`
+      , values: [picUrl , linkUrl , title , paixu  ,remark,type]
+    })
+  } else if (id) {
+    await sql.promiseCall({
+      sql: `delete  from banner WHERE id=?`
+      , values: [id]
+    })
+  }
+  ctx.body = { code: 0, msg: 'success' }
+})
+
+//banner
+router.get('/banner/list', async function (ctx, next) {
+  let categorySql = await sql.promiseCall({ sql: `select * from banner   ORDER BY paixu ASC`, values: [] });
+  if (!categorySql.error) {
+    ctx.body = { "code": 0, "data": categorySql.results, "msg": "success" }
+  } else {
+    ctx.body = { code: -1, msg: categorySql.error.message }
+  }
+})
+
 //获取商品列表
 router.get('/goods/list', async function (ctx, next) {
   let query = ctx.request.query
