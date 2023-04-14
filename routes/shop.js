@@ -62,7 +62,7 @@ router.get('/category/all', async function (ctx, next) {
     let categorySql = await sql.promiseCall({ sql: `select * from category where isUse = 1 ORDER BY paixu ASC`, values: [] });
     if (!categorySql.error) {
         ctx.body = { "code": 0, "data": categorySql.results.map(item=>{
-            return {...item,id:pid}
+            return {...item,id:item.pid}
         }), "msg": "success" }
     } else {
         ctx.body = { code: -1, msg: categorySql.error.message }

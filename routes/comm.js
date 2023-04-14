@@ -22,9 +22,6 @@ router.get('/urlTobase64', async function (ctx, next) {
   ctx.body = { code: 0, data: await QRCode.toDataURL(url) }
 })
 
-
-
-
 router.get('/test', async (ctx, next) => {
   ctx.body = await jsApicCeateOrder({
     total_fee: 10,
@@ -34,11 +31,6 @@ router.get('/test', async (ctx, next) => {
     create_ip: get_client_ip(ctx.req)
   });
 })
-
-
-
-
-
 
 router.get('/banner/list', async function (ctx, next) {
   const { type } = ctx.request.query;
@@ -50,40 +42,16 @@ router.get('/banner/list', async function (ctx, next) {
   }
 })
 
-//发送邮件
-router.all('/email', async function (ctx, next) {
-  var mail = {
-    // 发件人
-    from: '美国代购<maker_wx1018@163.com>',
-    // 主题
-    subject: '接受凭证',//邮箱主题
-    // 收件人
-    to: 'maker.wx@gmail.com',//前台传过来的邮箱
-    // 邮件内容，HTML格式
-    text: '用' + 32323 + '作为你的验证码'//发送验证码
-  };
-  await email(mail);
-  ctx.body = { code: 0, msg: "success" }
+
+router.all('/app/version', async function (ctx, next) {
+  ctx.body = global.appVersion ||0
 })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+router.get('/app/setVersion', async function (ctx, next) {
+  const { version } = ctx.request.query;
+  global.appVersion = version||global.appVersion
+  ctx.body = global.appVersion 
+})
 
 
 router.get('/score/deduction/rules', async function (ctx, next) {
@@ -93,18 +61,6 @@ router.get('/score/deduction/rules', async function (ctx, next) {
 router.post('/score/exchange/cash', async function (ctx, next) {
   ctx.body = { "code": 0, "data": 1000.00, "msg": "success" }
 })
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 router.post('/score/logs', async function (ctx, next) {
