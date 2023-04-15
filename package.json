@@ -41,6 +41,7 @@
     "nodemailer": "^6.9.1",
     "pug": "^2.0.3",
     "qrcode": "^1.5.1",
+    "socket.io": "^4.6.1",
     "svg-captcha": "^1.4.0",
     "tencentcloud-sdk-nodejs-sms": "^4.0.570",
     "wechatpay-node-v3": "^2.1.1",

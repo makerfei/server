@@ -11,7 +11,7 @@ let shortlink = (query, data) => {
             break;
         case 'wx':
             if (data.data === 'kf') {
-                returnUrl = `https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=Mzg3MzI2NDcwNw==#wechat_redirect`
+                returnUrl = `https://www.mgdg.shop/index.html#/kefu`
             }
             break;
         case 'goods':

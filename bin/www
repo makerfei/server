@@ -3,9 +3,10 @@
 /**
  * Module dependencies.
  */
-
+//const io = require("../tool/io")
 var app = require('../app');
 var debug = require('debug')('demo:server');
+
 var http = require('http');
 const fs = require('fs');
 const https = require('https');//node内置https serve
@@ -17,7 +18,9 @@ var options = {
   key: fs.readFileSync('./config/mgdg.shop.key'),  //私钥文件路径
   cert: fs.readFileSync('./config/mgdg.shop_bundle.crt')  //证书文件路径
 };
-https.createServer(options, app.callback()).listen(443, () => {
+ const httpsServer =  https.createServer(options, app.callback());
+//  io(httpsServer)
+ httpsServer.listen(443, () => {
   console.log(`server running success at 443`)
 });
 
@@ -29,6 +32,8 @@ var port = normalizePort(process.env.PORT || '80');
  */
 
 var server = http.createServer(app.callback());
+//io(server)
+
 
 /**
  * Listen on provided port, on all network interfaces.
