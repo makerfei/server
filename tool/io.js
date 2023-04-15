@@ -1,5 +1,7 @@
 
-const mysql = require("../tool/chatMysql")
+const mysql = require("../tool/chatMysql");
+const sql = require('../tool/sqlConfig');
+
 const statu = [
     {
         "code": false,
@@ -177,37 +179,20 @@ module.exports = function (server) {
     io.on('connection', socket => {
 
         //如果用户存在则传回用户数据，历史聊天记录，否则创建用户
-        socket.on("visit", data => {
-            //校验数据
-            var newData = data; // verification.newData(data)[0].data;
-            if (newData) {
-                mysql.selectUser(newData.userId).then((data) => {
-                    if (data) {
-                        //传回用户数据
-                        let returns = statu.filter((v) => v.type == "success");
-                        returns[0].data = data;
-                        socket.emit("visitReturn", returns);
-                    } else {
-                        //进行用户注册
-                        mysql.insertUser(newData);
-                    }
-                });
-
+        socket.on("visit", async data => {
+            if (data.userId) {
+            let userRes = await   sql.promiseCall({sql:`select count(*) as count from chatuser where userId = ?`,values:[data.userId]})
+             if(userRes.results&&userRes.results[0].count===0){
+                 await  sql.promiseCall({sql:`INSERT INTO chatuser ( userId, userName)
+                 VALUES(?,?);`,values:[data.userId,data.userName]}).then(data=>{ })
+             }
+             socket.emit("visitReturn", {});
             } else {
                 //数据格式错误
-                socket.emit("error", socket.emit("error", statu.filter((v) => v.type == "illegalData")))
+                socket.emit("error", {code:false,message:"非法数据"})
             }
 
         })
-
-
-        //返回公钥
-        socket.on("getPublicKey", data => {
-            socket.emit("returnPublicKey", RSA.returnPublicKey())
-        })
-
-
-
 
         //客服上线
         socket.on("serviceOnline", data => {
@@ -264,8 +249,7 @@ module.exports = function (server) {
 
         //用户转人工
         socket.on("toLabor", data => {
-            var Data = verification.newData(data);
-            var newData = Data[0];
+            var newData = data;
             if (newData.code) {
                 if (services.length > 0) {
                     // let serviceTemp=services.filter((v) => v.serviceState == 0)
@@ -297,8 +281,8 @@ module.exports = function (server) {
 
         //让用户进入
         socket.on("userJoin", data => {
-            var Data = verification.newData(data);
-            var newData = Data[0];
+         
+            var newData =data;
             if (newData.code) {
                 let socketRoom = data.socketRoom;
                 let receiveId = data.userId;
@@ -320,9 +304,6 @@ module.exports = function (server) {
                 user_returns[0].data.socketRoom = socket.id;
                 user_returns[0].data.receiveId = receiveId;
                 socket.to(socketRoom).emit("UserJoinSuccess", user_returns);
-
-
-
             } else {
                 socket.emit("error", Data);
             }
@@ -331,19 +312,21 @@ module.exports = function (server) {
         //发送消息
         socket.on("sendMessage", data => {
             data.time = new moment().format('YYYY-MM-DD hh:mm:ss');
-            var Data = verification.newData(data);
-            var newData = Data[0];
+            var newData =data;
             if (newData.code) {
-                mysql.insertMessage(newData.data).then((sql_data) => {
-                    if (sql_data) {
-                        //消息发送
-                        let returns = statu.filter((v) => v.type == "success");
-                        returns[0].data = data;
-                        socket.to(data.socketRoom).emit("reviceMessage", returns)
-                    } else {
-                        socket.emit("error", statu.filter((v) => v.type == "false"));
-                    }
-                });
+                console.log(newData);
+                
+
+                // mysql.insertMessage(newData.data).then((sql_data) => {
+                //     if (sql_data) {
+                //         //消息发送
+                //         let returns = statu.filter((v) => v.type == "success");
+                //         returns[0].data = data;
+                //         socket.to(data.socketRoom).emit("reviceMessage", returns)
+                //     } else {
+                //         socket.emit("error", statu.filter((v) => v.type == "false"));
+                //     }
+                // });
             } else {
                 socket.emit("error", Data)
             }

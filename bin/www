@@ -3,7 +3,7 @@
 /**
  * Module dependencies.
  */
-//const io = require("../tool/io")
+const io = require("../tool/io")
 var app = require('../app');
 var debug = require('debug')('demo:server');
 
@@ -19,20 +19,20 @@ var options = {
   cert: fs.readFileSync('./config/mgdg.shop_bundle.crt')  //证书文件路径
 };
  const httpsServer =  https.createServer(options, app.callback());
-//  io(httpsServer)
+ io(httpsServer)
  httpsServer.listen(443, () => {
   console.log(`server running success at 443`)
 });
 
 var port = normalizePort(process.env.PORT || '80');
-// app.set('port', port);
+//app.set('port', port);
 
 /**
  * Create HTTP server.
  */
 
 var server = http.createServer(app.callback());
-//io(server)
+io(server)
 
 
 /**
