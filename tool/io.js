@@ -211,7 +211,7 @@ module.exports = function (server) {
                 //     socket.emit("error", statu.filter((v) => v.type == "OnlineFalse"))
                 // }
             } else {
-                socket.emit("error", Data)
+                socket.emit("error", data)
             }
         })
 
@@ -274,7 +274,7 @@ module.exports = function (server) {
                 }
 
             } else {
-                socket.emit("error", Data);
+                socket.emit("error", data);
             }
         })
 
@@ -305,7 +305,7 @@ module.exports = function (server) {
                 user_returns[0].data.receiveId = receiveId;
                 socket.to(socketRoom).emit("UserJoinSuccess", user_returns);
             } else {
-                socket.emit("error", Data);
+                socket.emit("error", data);
             }
         })
 
@@ -328,7 +328,7 @@ module.exports = function (server) {
                 //     }
                 // });
             } else {
-                socket.emit("error", Data)
+                socket.emit("error", data)
             }
         })
 

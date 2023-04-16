@@ -62,7 +62,7 @@ router.all('/openAi', async function (ctx, next) {
     method: 'post',
     url: 'https://api.openai.com/v1/completions',
     data: { ...ctx.request.body, ...ctx.request.query },
-    headers: { 'content-type': 'application/json', 'Authorization': 'Bearer ' + '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' }
+    headers: { 'content-type': 'application/json', 'Authorization': 'Bearer ' + '     sk-Va9euMKgjXrcA6EG8X     xVT3BlbkFJ2JpRLJg4fLV5ckjY1kvE' }
   }).then(res => {
     console.log(res);
     return res;
