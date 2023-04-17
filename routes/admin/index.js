@@ -257,7 +257,7 @@ router.post('/goods/picsDel', async function (ctx, next) {
 router.post('/goods/change', async function (ctx, next) {
   let insertId = 0;
   let { id = '', afterSale = '', categoryId = 0, characteristic = '', content = '', feeType = 0,
-    isFree = 0, logisticsId = 0, minPrice = '', name = '', originalPrice = '',
+    isFree = 1, logisticsId = 1, minPrice = '', name = '', originalPrice = '',
     pic = '', recommendStatus = 0, status = '', stores = '',originUrl="" ,properties="[]"} = ctx.request.body;
   if (id && name) {
   let changeSel=  await sql.promiseCall({

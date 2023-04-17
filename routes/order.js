@@ -117,10 +117,15 @@ router.post('/create', async function (ctx, next) {
     if (!errText && goods.propertyChildIds) {
       //获取规格名称
       let property = await propertyChildIdsGetText(goods.propertyChildIds,goods.properties)
-      let goodsDateSql = await sql.promiseCall({ sql: `select  price,stores,id from skulist where goodsId =? and propertyChildIds=?  limit 0,1`, values: [goods.goodsId, goods.propertyChildIds] });
+      let goodsDateSql = await sql.promiseCall({ sql: `select  price,stores,id , img from skulist where goodsId =? and propertyChildIds=?  limit 0,1`, values: [goods.goodsId, goods.propertyChildIds] });
       if (!goodsDateSql.error && goodsDateSql?.results?.[0]?.price) {
         //更新价格
         goodsList[i] = { ...goodsList[i], price: goodsDateSql?.results?.[0]?.price || 0, property }
+
+        //商品图片更换
+        if( goodsDateSql?.results?.[0]?.img){
+          goodsList[i].pic = goodsDateSql?.results?.[0]?.img
+        }
 
         //减库存
         let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);

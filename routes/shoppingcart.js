@@ -36,10 +36,13 @@ let getCartLit = function (userId) {
             for (let i = 0; i < cartList.length; i++) {
                 let item = cartList[i];
                 if (item.sku) {
-                    let cartgoods = await sql.promiseCall({ sql: `select price,stores from skulist where  propertyChildIds = '${item.sku}' and goodsId = ${item.goodsId} `, values: [] })
+                    let cartgoods = await sql.promiseCall({ sql: `select price,stores,img from skulist where  propertyChildIds = '${item.sku}' and goodsId = ${item.goodsId} `, values: [] })
                     if (!cartgoods.error) {
                         if (cartgoods.results.length > 0) {
                             cartList[i] = { ...cartList[i], ...cartgoods.results[0] }
+                            if(cartgoods.results[0].img){
+                                cartList[i].pic = cartgoods.results[0].img;
+                            }
                         }
                     } else {
                         errText = cartgoods.error.message;
