@@ -258,17 +258,17 @@ router.post('/goods/change', async function (ctx, next) {
   let insertId = 0;
   let { id = '', afterSale = '', categoryId = 0, characteristic = '', content = '', feeType = 0,
     isFree = 0, logisticsId = 0, minPrice = '', name = '', originalPrice = '',
-    pic = '', recommendStatus = 0, status = '', stores = '',originUrl="" } = ctx.request.body;
+    pic = '', recommendStatus = 0, status = '', stores = '',originUrl="" ,properties="[]"} = ctx.request.body;
   if (id && name) {
   let changeSel=  await sql.promiseCall({
       sql: `update goods set 
       afterSale = ?, categoryId = ?, characteristic = ?, content = ?, feeType = ?,
     isFree = ?, logisticsId = ?, minPrice = ?, name = ?, originalPrice = ?,
-    pic = ?, recommendStatus = ?, status = ?, stores = ? , originUrl=?
+    pic = ?, recommendStatus = ?, status = ?, stores = ? , originUrl=?,properties=?
       where id=?`
       , values: [afterSale, categoryId, characteristic, content, feeType,
         isFree, logisticsId, minPrice, name, originalPrice,
-        pic, recommendStatus, status, stores, originUrl,id]
+        pic, recommendStatus, status, stores, originUrl,properties,id]
     }).then(({error,results})=>{
       
   })
@@ -276,10 +276,10 @@ router.post('/goods/change', async function (ctx, next) {
    insertId =  await sql.promiseCall({
       sql: ` INSERT INTO goods (afterSale, categoryId, characteristic, content, feeType,
         isFree, logisticsId, minPrice, name, originalPrice,
-        pic, recommendStatus, status, stores,originUrl) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        pic, recommendStatus, status, stores,originUrl,properties) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
       , values: [afterSale, categoryId, characteristic, content, feeType,
         isFree, logisticsId, minPrice, name, originalPrice,
-        pic, recommendStatus, status, stores,originUrl]
+        pic, recommendStatus, status, stores,originUrl,properties]
     }).then(({error,results})=>{
         return  results.insertId
     })

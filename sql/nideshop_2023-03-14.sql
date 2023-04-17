@@ -56,7 +56,7 @@ CREATE TABLE `cashlog` (
   `userId` int(11) NOT NULL DEFAULT '0',
   `amount` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=133 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=135 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'category'
 CREATE TABLE `category` (
@@ -76,15 +76,7 @@ CREATE TABLE `chatuser` (
   `userState` int(11) NOT NULL DEFAULT '0',
   `isProhibit` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Create syntax for TABLE 'childscurgoods'
-CREATE TABLE `childscurgoods` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL DEFAULT '',
-  `propertyId` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'comment'
 CREATE TABLE `comment` (
@@ -97,7 +89,7 @@ CREATE TABLE `comment` (
   `commentService` varchar(16) NOT NULL DEFAULT '',
   `commentReply` mediumtext,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'goods'
 CREATE TABLE `goods` (
@@ -116,8 +108,10 @@ CREATE TABLE `goods` (
   `logisticsId` int(11) NOT NULL DEFAULT '0',
   `afterSale` varchar(50) NOT NULL DEFAULT '',
   `status` int(11) NOT NULL DEFAULT '0',
+  `originUrl` varchar(1000) DEFAULT NULL,
+  `properties` varchar(1000) NOT NULL DEFAULT '[]',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'level'
 CREATE TABLE `level` (
@@ -151,7 +145,7 @@ CREATE TABLE `logistics` (
   `trackingNumber` varchar(255) NOT NULL DEFAULT '',
   `shipperName` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=75 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=83 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'logs'
 CREATE TABLE `logs` (
@@ -161,7 +155,7 @@ CREATE TABLE `logs` (
   `userId` int(11) NOT NULL DEFAULT '0',
   `dateAdd` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'message'
 CREATE TABLE `message` (
@@ -194,7 +188,7 @@ CREATE TABLE `orderinfo` (
   `wxPayData` varchar(1000) NOT NULL DEFAULT '',
   `transaction_id` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=397 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=405 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'orderitem'
 CREATE TABLE `orderitem` (
@@ -209,7 +203,7 @@ CREATE TABLE `orderitem` (
   `goodsName` varchar(255) NOT NULL DEFAULT '',
   `pic` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=374 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=382 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'pics'
 CREATE TABLE `pics` (
@@ -218,14 +212,7 @@ CREATE TABLE `pics` (
   `pic` varchar(255) NOT NULL DEFAULT '',
   `type` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4;
-
--- Create syntax for TABLE 'properties'
-CREATE TABLE `properties` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=76 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'refundapply'
 CREATE TABLE `refundapply` (
@@ -262,7 +249,7 @@ CREATE TABLE `shoppingcart` (
   `sku` varchar(255) DEFAULT '',
   `userId` int(11) DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'shortlink'
 CREATE TABLE `shortlink` (
@@ -282,8 +269,9 @@ CREATE TABLE `skulist` (
   `score` int(11) NOT NULL DEFAULT '0',
   `stores` int(11) NOT NULL DEFAULT '0',
   `propertyChildIds` varchar(255) NOT NULL DEFAULT '',
+  `img` varchar(1000) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'user'
 CREATE TABLE `user` (
@@ -304,3 +292,11 @@ CREATE TABLE `user` (
   `type` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4;
+
+-- Create syntax for TABLE 'webimglink'
+CREATE TABLE `webimglink` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `origin` varchar(1000) DEFAULT NULL,
+  `url` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb4;
