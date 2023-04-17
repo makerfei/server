@@ -32,14 +32,17 @@ let getCartLit = function (userId) {
             }
         }
         //循环判断是否是分类
+        
         if (!errText & cartList.length > 0) {
             for (let i = 0; i < cartList.length; i++) {
                 let item = cartList[i];
                 if (item.sku) {
                     let cartgoods = await sql.promiseCall({ sql: `select price,stores,img from skulist where  propertyChildIds = '${item.sku}' and goodsId = ${item.goodsId} `, values: [] })
+                    
                     if (!cartgoods.error) {
                         if (cartgoods.results.length > 0) {
                             cartList[i] = { ...cartList[i], ...cartgoods.results[0] }
+                            
                             if(cartgoods.results[0].img){
                                 cartList[i].pic = cartgoods.results[0].img;
                             }
@@ -146,7 +149,7 @@ router.post('/add', async function (ctx, next) {
     if (sku) {
         sku = JSON.parse(sku)
         sku = sku.map(item => { return `${item.optionId}:${item.optionValueId}` });
-        sku = `${sku.join(',')},`
+        sku = `${sku.join(',')}`
     }
     let userId = ctx.session.userId;
     let errText = "";
