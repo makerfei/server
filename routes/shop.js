@@ -146,6 +146,7 @@ router.get('/detail', async function (ctx, next) {
                     feeType: goodsCon.basicInfo.feeType,
                     isFree: goodsCon.basicInfo.isFree
                 }
+                goodsCon.properties =JSON.parse(goodsCon.basicInfo.properties)
             } else {
                 errortxt = '暂无数据';
             }
@@ -196,32 +197,30 @@ router.get('/detail', async function (ctx, next) {
     //获取properties
 
     if (!errortxt && goodsCon.skuList.length > 0) {
-        goodsCon.properties = [];
-        let propertiesIdliststr = goodsCon.skuList[0].propertyChildIds.split(',');
-        for (i = 0; i < propertiesIdliststr.length; i++) {
-            let properties = propertiesIdliststr[i].split(':')[0];
-            if (properties) {
-                let propertiesItem = {};
+       // goodsCon.properties = [];
+        // let propertiesIdliststr = goodsCon.skuList[0].propertyChildIds.split(',');
+        // for (i = 0; i < propertiesIdliststr.length; i++) {
+        //     let properties = propertiesIdliststr[i].split(':')[0];
+        //     if (properties) {
+        //         let propertiesItem = {};
 
-                let propertiesSql = await sql.promiseCall({ sql: `select * from properties where id = ${properties} LIMIT 0,1`, values: [] });
-                if (!propertiesSql.error) {
-                    propertiesItem = propertiesSql.results.length > 0 ? propertiesSql.results[0] : {}
-                } else {
-                    errortxt = propertiesSql.error.message
-                }
+        //         let propertiesSql = await sql.promiseCall({ sql: `select * from properties where id = ${properties} LIMIT 0,1`, values: [] });
+        //         if (!propertiesSql.error) {
+        //             propertiesItem = propertiesSql.results.length > 0 ? propertiesSql.results[0] : {}
+        //         } else {
+        //             errortxt = propertiesSql.error.message
+        //         }
 
-                let childsCurGoodsSql = await sql.promiseCall({ sql: `select * from childsCurGoods where propertyId = ${properties}`, values: [] });
-                if (!childsCurGoodsSql.error) {
-                    propertiesItem.childsCurGoods = childsCurGoodsSql.results;
-                } else {
-                    errortxt = childsCurGoodsSql.error.message
-                }
-                goodsCon.properties.push(propertiesItem)
-            }
+        //         let childsCurGoodsSql = await sql.promiseCall({ sql: `select * from childsCurGoods where propertyId = ${properties}`, values: [] });
+        //         if (!childsCurGoodsSql.error) {
+        //             propertiesItem.childsCurGoods = childsCurGoodsSql.results;
+        //         } else {
+        //             errortxt = childsCurGoodsSql.error.message
+        //         }
+        //         goodsCon.properties.push(propertiesItem)
+        //     }
 
-        }
-
-
+        // }
     }
     if (!errortxt) {
         ctx.body = { code: 0, data: goodsCon, msg: "success" }

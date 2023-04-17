@@ -14,18 +14,23 @@ const { finishOrder, cashLogSql, logsSql, getStatusTxt,
 
 
 //规格key转文字
-let propertyChildIdsGetText = async function (keyStr) {
+let propertyChildIdsGetText = async function (keyStr,properties) {
   let keylist = keyStr.split(',');
+  let propertiesJson = JSON.parse(properties)
+  
   return new Promise(async (resolve, reject) => {
     let resStr = [];
     for (let i = 0; i < keylist.length; i++) {
       let item = keylist[i].split(':');
       if (item.length >= 2 && item[0] && item[1]) {
-        let typenamesql = await sql.promiseCall({ sql: `select name from properties where id =? limit 0,1`, values: [item[0]] });
-        let valnamesql = await sql.promiseCall({ sql: `select name from childscurgoods where id =? and propertyId=? limit 0,1`, values: [item[1], item[0]] });
-        if (!typenamesql.error && !valnamesql.error && typenamesql.results.length > 0 && valnamesql.results.length > 0) {
-          resStr.push(`${typenamesql.results[0].name}:${valnamesql.results[0].name}`)
-        }
+        propertiesJson.map(type=>{
+          type.childsCurGoods.map(v=>{
+            
+            if(item[0]==type.id&&item[1]==v.id){
+              resStr.push(`${type.name}:${v.name}`)
+            }
+          })
+        })
       }
     }
     resolve(resStr.join(','));
@@ -91,7 +96,7 @@ router.post('/create', async function (ctx, next) {
   for (let i = 0; i < goodsList.length; i++) {
     let goods = goodsList[i]
     if (!errText) {
-      let goodsDateSql = await sql.promiseCall({ sql: `select afterSale, minPrice as price,stores,id as goodsId,name as goodsName,pic from goods where id =? limit 0,1`, values: [goods.goodsId] });
+      let goodsDateSql = await sql.promiseCall({ sql: `select properties, afterSale, minPrice as price,stores,id as goodsId,name as goodsName,pic from goods where id =? limit 0,1`, values: [goods.goodsId] });
       if (!goodsDateSql.error) {
         goodsList[i] = { ...goodsList[i], ...goodsDateSql?.results?.[0], property: '' }
         let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);
@@ -111,7 +116,7 @@ router.post('/create', async function (ctx, next) {
     let goods = goodsList[i]
     if (!errText && goods.propertyChildIds) {
       //获取规格名称
-      let property = await propertyChildIdsGetText(goods.propertyChildIds)
+      let property = await propertyChildIdsGetText(goods.propertyChildIds,goods.properties)
       let goodsDateSql = await sql.promiseCall({ sql: `select  price,stores,id from skulist where goodsId =? and propertyChildIds=?  limit 0,1`, values: [goods.goodsId, goods.propertyChildIds] });
       if (!goodsDateSql.error && goodsDateSql?.results?.[0]?.price) {
         //更新价格

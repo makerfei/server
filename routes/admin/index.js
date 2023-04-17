@@ -193,9 +193,15 @@ router.get('/goods/detail', async function (ctx, next) {
     values: [id]
   })
 
+  let skulistSql = await sql.promiseCall({
+    sql: `select *  from skulist    where goodsId =? `,
+    values: [id]
+  })
 
   ctx.body = {
     "code": 0, "data": {
+
+      skulist:skulistSql.results||[],
       picsList: (picsListSql.results || []).map(item => {
         return {
           // ...item,
@@ -219,6 +225,18 @@ router.post('/goods/picsAdd', async function (ctx, next) {
   ctx.body = { code: 0, data: picsListSql.results.insertId }
 })
 
+router.post('/goods/skuAdd', async function (ctx, next) {
+  let { goodsId, img,originalPrice, price,stores,propertyChildIds} = ctx.request.body;
+  let picsListSql = await sql.promiseCall({
+    sql: `INSERT INTO skulist (  goodsId, img,originalPrice, price,stores,propertyChildIds) VALUES (?, ?, ?,?,?,?)`,
+    values: [ goodsId, img,originalPrice, price,stores,propertyChildIds]
+  })
+  ctx.body = { code: 0, data: picsListSql.results.insertId }
+})
+
+
+
+
 router.post('/goods/picsDel', async function (ctx, next) {
   let { id } = ctx.request.body;
   let picsListSql = await sql.promiseCall({
@@ -237,31 +255,33 @@ router.post('/goods/picsDel', async function (ctx, next) {
 
 //商品详情修改
 router.post('/goods/change', async function (ctx, next) {
-
-  let { id = '', afterSale = '', categoryId = '', characteristic = '', content = '', feeType = '',
-    isFree = '', logisticsId = '', minPrice = '', name = '', originalPrice = '',
-    pic = '', recommendStatus = '', status = '', stores = '' } = ctx.request.body;
+  let insertId = 0;
+  let { id = '', afterSale = '', categoryId = 0, characteristic = '', content = '', feeType = 0,
+    isFree = 0, logisticsId = 0, minPrice = '', name = '', originalPrice = '',
+    pic = '', recommendStatus = 0, status = '', stores = '',originUrl="" } = ctx.request.body;
   if (id && name) {
-    await sql.promiseCall({
+  let changeSel=  await sql.promiseCall({
       sql: `update goods set 
       afterSale = ?, categoryId = ?, characteristic = ?, content = ?, feeType = ?,
     isFree = ?, logisticsId = ?, minPrice = ?, name = ?, originalPrice = ?,
-    pic = ?, recommendStatus = ?, status = ?, stores = ?
-      
-      
+    pic = ?, recommendStatus = ?, status = ?, stores = ? , originUrl=?
       where id=?`
       , values: [afterSale, categoryId, characteristic, content, feeType,
         isFree, logisticsId, minPrice, name, originalPrice,
-        pic, recommendStatus, status, stores, id]
-    })
+        pic, recommendStatus, status, stores, originUrl,id]
+    }).then(({error,results})=>{
+      
+  })
   } else if (name) {
-    await sql.promiseCall({
+   insertId =  await sql.promiseCall({
       sql: ` INSERT INTO goods (afterSale, categoryId, characteristic, content, feeType,
         isFree, logisticsId, minPrice, name, originalPrice,
-        pic, recommendStatus, status, stores) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        pic, recommendStatus, status, stores,originUrl) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
       , values: [afterSale, categoryId, characteristic, content, feeType,
         isFree, logisticsId, minPrice, name, originalPrice,
-        pic, recommendStatus, status, stores]
+        pic, recommendStatus, status, stores,originUrl]
+    }).then(({error,results})=>{
+        return  results.insertId
     })
   } else if (id) {
     await sql.promiseCall({
@@ -269,7 +289,7 @@ router.post('/goods/change', async function (ctx, next) {
       , values: [id]
     })
   }
-  ctx.body = { code: 0, msg: 'success' }
+  ctx.body = { code: 0, msg: 'success',data:{id:id||insertId} }
 })
 
 
