@@ -94,7 +94,7 @@ router.post('/reptile', async function (ctx, next) {
         // 算归宿
         retrunData.skuList.push({
             originalPrice:retrunData.originalPrice,
-            price:retrunData.price,
+            price: skuInfoMap[key].price?  Math.ceil( Number(skuInfoMap[key].price) * 200  + 500) : retrunData.price,
             stores: Math.ceil(skuInfoMap[key].canBookCount/10),
             propertyChildIds:propertyChildIds,
             img:imageUrl
