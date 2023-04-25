@@ -7,6 +7,9 @@ const fs = require('fs')
 const sms = require('../config/sms')
 const images = require("images");
 const moment = require('moment');
+const jimp = require('jimp');
+
+
 
 var COS = require('cos-nodejs-sdk-v5');
 const { default: axios } = require('axios');
@@ -25,8 +28,7 @@ router.post('/upload/file', async function (ctx, next) {
             let filePath = files.upfile.filepath // 本地文件路径
             let cutSize = fields.cutSize || 1;
             let nodeCut = fields.nodeCut !== 'false';
-
-
+            let nodeJpg = fields.nodeJpg !== 'false';
             //创建分类文件夹
             let dayFile = new moment().format('YYYY_MM_DD');
             const dayFilePath = path.join(__dirname, `../public/upload/${dayFile}`)
@@ -36,15 +38,17 @@ router.post('/upload/file', async function (ctx, next) {
 
             let originType = String(files.upfile.originalFilename).split('.')[1] || 'png';
             let canCut = originType == 'png' || originType == 'jpeg' || originType == 'jpg'
-            let fileType = canCut ? 'jpg' : originType;
+            let fileType = nodeJpg && canCut ? 'jpg' : originType;
 
             let fileName = new Date().getTime();
             let fullPathCos = `img/${dayFile}/${fileName}.${fileType}`
             // fs.copyFileSync(files.upfile.filepath, path.join(__dirname, `../public/upload`, `${fileName}.${fileType}`));
 
             //如果是图片且可以进行裁剪
-            if (canCut) {
+            if (canCut && nodeJpg) {
                 filePath = await imgAndCompressCut(filePath, path.join(__dirname, `../public/upload/${dayFile}`, `${fileName}.${fileType}`), cutSize, nodeCut)
+            }else{
+                filePath = await pngTotransparent(filePath, path.join(__dirname, `../public/upload/${dayFile}`, `${fileName}.${fileType}`));
             }
             //上传到cos
             let cosLink = await upToCos(filePath, fullPathCos)
@@ -81,6 +85,48 @@ const imgAndCompressCut = (filePath, fullLocalPath, cutSize = 1, nodeCut = true)
 }
 
 
+//透明处理
+const pngTotransparent = (filePath, fullLocalPath,) => {
+    return new Promise(async (res, inj) => {
+        let img = await    imgAndCompressCut(filePath, fullLocalPath, 1, true);
+      
+        const image = await jimp.read(fullLocalPath);
+        image.scan(0, 0, image.bitmap.width, image.bitmap.height,  function (x, y, idx) {
+           
+            if( 
+                Math.abs( this.bitmap.data[idx]-this.bitmap.data[idx+1])<6&&
+                Math.abs( this.bitmap.data[idx+2]-this.bitmap.data[idx+1])<6&&
+                Math.abs( this.bitmap.data[idx+2]-this.bitmap.data[idx])<6&&
+                this.bitmap.data[idx]>=150&&
+                this.bitmap.data[idx]<=240
+            ){
+                this.bitmap.data[idx] = 0;
+                this.bitmap.data[idx + 1] = 0;
+                this.bitmap.data[idx + 2] = 0;
+                this.bitmap.data[idx + 3] =0;
+            }
+           
+            if (x == image.bitmap.width - 1 && y == image.bitmap.height - 1) {
+                this.resize(375,375).writeAsync(fullLocalPath).then(()=>{
+                    res(fullLocalPath)
+                })
+            }
+           
+           
+        },function(){
+           
+        });
+
+      //  
+     
+
+      
+    })
+
+
+}
+
+
 
 
 
@@ -102,7 +148,7 @@ const upToCos = (filePath, fullPathCos) => {
                 console.log(JSON.stringify(progressData));
             }
         }, function (err, data) {
-            res(`https://www.mgdg.shop/${fullPathCos}`)
+            res(`https://h5-1316824427.cos-website.ap-shanghai.myqcloud.com/${fullPathCos}`)
         });
 
     })
@@ -122,7 +168,7 @@ router.post('/upload/url', async function (ctx, next) {
 
     //先从数据库里面查是否有
     let webimglinkSql = await sql.promiseCall({ sql: `select url from webimglink where origin = ? limit 0,1`, values: [url] })
-    if (  (!webimglinkSql.error)&& webimglinkSql.results && webimglinkSql.results.length > 0) {
+    if ((!webimglinkSql.error) && webimglinkSql.results && webimglinkSql.results.length > 0) {
         cosLink = webimglinkSql.results[0].url;
         console.log("本地取图片，不上传" + cosLink)
     }
@@ -147,7 +193,7 @@ router.post('/upload/url', async function (ctx, next) {
                     console.log(JSON.stringify(progressData));
                 }
             }, async function (err, data) {
-                let reslink = `https://www.mgdg.shop/${fullPathCos}`
+                let reslink = `https://h5-1316824427.cos-website.ap-shanghai.myqcloud.com/${fullPathCos}`
                 await sql.promiseCall({ sql: `INSERT INTO webimglink (origin,url) VALUES(?,?)`, values: [url, reslink] })
 
                 resolve(reslink)

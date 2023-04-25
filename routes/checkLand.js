@@ -109,6 +109,7 @@ router.get('/verification/sms/get', async function (ctx, next) {
         let mathCode = Number(Math.random() * 8999 + 1000).toFixed(0);
         ctx.session.imgCodeMobile = mobile;
         ctx.session.RegisterSMSVerificationCode = mathCode;
+        console.log("短信验证码是：" +mathCode);
         //进行短信发送
         sms(mobile, mathCode);
 

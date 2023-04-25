@@ -34,9 +34,10 @@ app.use(logger())
 
 app.use(
   cors({
+   
     origin: function (ctx) { //设置允许来自指定域名请求
-      return '*'
-      //return 'https://www.mgdg.shop'; //只允许http://localhost:8080这个域名的请求
+       return  ctx.header.origin
+      //return 'http://localhoat:81'; //只允许http://localhost:8080这个域名的请求
     },
     maxAge: 5, //指定本次预检请求的有效期，单位为秒。
     credentials: true, //是否允许发送Cookie
@@ -69,7 +70,7 @@ const session_config = {
   autoCommit: true, /** 自动提交到响应头。(默认是 true) */
   overwrite: true, /** 是否允许重写 。(默认是 true) */
   httpOnly: true, /** 是否设置HttpOnly，如果在Cookie中设置了"HttpOnly"属性，那么通过程序(JS脚本、Applet等)将无法读取到Cookie信息，这样能有效的防止XSS攻击。  (默认 true) */
-  signed: true, /** 是否签名。(默认是 true) */
+  signed: false, /** 是否签名。(默认是 true) */
   rolling: true, /** 是否每次响应时刷新Session的有效期。(默认是 false) */
   renew: false, /** 是否在Session快过期时刷新Session的有效期。(默认是 false) */
 };
