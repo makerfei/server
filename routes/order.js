@@ -79,140 +79,7 @@ router.post('/reputation', async function (ctx, next) {
 })
 
 
-//创建订单
-router.post('/create', async function (ctx, next) {
-  let { goodsJsonStr, remark, peisongType, linkMan, mobile, address, provinceId, cityId, districtId, balanceSwitch } = ctx.request.body;
-  let userId = ctx.session.userId;
-  let amount = 0;
-  let goodsNumber = 0;
-  let orderNumber = moment(new Date()).format('YYYYMMDDHHmmss') + '' + Number(Math.random() * 100).toFixed(0)
-  let goodsList = JSON.parse(goodsJsonStr);
-  let resData = {};
-  // [{"goodsId":2,"number":1,"propertyChildIds":""}]
 
-  let errText = ''
-
-  //获取价格
-  for (let i = 0; i < goodsList.length; i++) {
-    let goods = goodsList[i]
-    if (!errText) {
-      let goodsDateSql = await sql.promiseCall({ sql: `select properties, afterSale, minPrice as price,stores,id as goodsId,name as goodsName,pic from goods where id =? limit 0,1`, values: [goods.goodsId] });
-      if (!goodsDateSql.error) {
-        goodsList[i] = { ...goodsList[i], ...goodsDateSql?.results?.[0], property: '' }
-        let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);
-        console.log(delNumber)
-        if (delNumber >= 0) {
-          let jiansql = await sql.promiseCall({ sql: `update goods set  stores = ${delNumber}   where id =?`, values: [goodsDateSql?.results?.[0]?.goodsId] });
-        } else {
-          errText = '库存不足'
-        }
-      } else {
-        errText = goodsDateSql.error.message;
-      }
-    }
-  }
-  //多规格获取价格
-  for (let i = 0; i < goodsList.length; i++) {
-    let goods = goodsList[i]
-    if (!errText && goods.propertyChildIds) {
-      //获取规格名称
-      let property = await propertyChildIdsGetText(goods.propertyChildIds,goods.properties)
-      let goodsDateSql = await sql.promiseCall({ sql: `select  price,stores,id , img from skulist where goodsId =? and propertyChildIds=?  limit 0,1`, values: [goods.goodsId, goods.propertyChildIds] });
-      if (!goodsDateSql.error && goodsDateSql?.results?.[0]?.price) {
-        //更新价格
-        goodsList[i] = { ...goodsList[i], price: goodsDateSql?.results?.[0]?.price || 0, property }
-
-        //商品图片更换
-        if( goodsDateSql?.results?.[0]?.img){
-          goodsList[i].pic = goodsDateSql?.results?.[0]?.img
-        }
-
-        //减库存
-        let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);
-        if (delNumber >= 0) {
-          let jiansql = await sql.promiseCall({ sql: `update skulist set  stores = ${delNumber}   where id =?`, values: [goodsDateSql?.results?.[0]?.id] });
-        } else {
-          errText = '库存不足'
-        }
-      } else {
-        errText = goodsDateSql.error.message;
-      }
-    }
-  }
-  //结算价格个数
-  if (!errText) {
-    for (let i = 0; i < goodsList.length; i++) {
-      amount += goodsList[i].price * goodsList[i].number;
-    }
-    goodsNumber += goodsList.length;
-  }
-
-
-
-  //放入数据库 
-  if (!errText) {
-    let orderInfoSql = await sql.promiseCall({
-      sql: `INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark,balanceSwitch)
-     VALUES(?,?,?,?,?,?,?,?);`,
-      values: [orderNumber, amount, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, userId, remark, balanceSwitch]
-    })
-    if (orderInfoSql.error) {
-      errText = orderInfoSql.error.message
-    }
-  }
-
-
-  //提取信息用于展示
-  if (!errText) {
-    let orderInfoSql = await sql.promiseCall({ sql: `select * from orderInfo where orderNumber = ? limit 0 ,1`, values: [orderNumber] })
-    if (!orderInfoSql.error) {
-      resData = orderInfoSql.results[0] || {}
-    } else {
-      errText = orderInfoSql.error.message
-    }
-  }
-
-  //物流地址保存数据库
-  if (!errText && peisongType == 'kd') {
-    let orderInfoSql = await sql.promiseCall({
-      sql: `INSERT INTO logistics ( address, linkMan, mobile, provinceId, districtId, orderId, cityId)
-  VALUES (?,?,?,?,?,?,?);`,
-      values: [address, linkMan, mobile, provinceId, districtId, resData.id, cityId]
-    })
-    if (orderInfoSql.error) {
-      errText = orderInfoSql.error.message
-    }
-  }
-
-  //单个商品记录放入订单商品表
-  if (!errText) {
-    for (let i = 0; i < goodsList.length; i++) {
-      if (!errText) {
-        let item = goodsList[i]
-        let orderItemSql = await sql.promiseCall({
-          sql: `INSERT INTO orderItem (goodsId, number, propertyChildIds, property, orderId, amountSingle, goodsName, pic,afterSale)
-          VALUES(?,?,?,?,?,?,?,?,?);`,
-          values: [item.goodsId, item.number, item.propertyChildIds, item.property || '', resData.id, item.price, item.goodsName, item.pic, item.afterSale]
-        })
-        if (orderItemSql.error) {
-          errText = orderItemSql.error.message
-        }
-      }
-    }
-  }
-
-  // 创建下单日志
-  if (!errText) {
-    await logsSql({ orderId: resData.id, type: balanceSwitch == 1 ? 10 : balanceSwitch == 2 ? 11 : 12 })
-  }
-
-  if (!errText) {
-    ctx.body = { "code": 0, "data": { orderData: resData }, "msg": "success" }
-  } else {
-    ctx.body = { "code": -1, msg: errText }
-  }
-
-})
 
 //订单详情
 router.get('/detail', async function (ctx, next) {
@@ -389,13 +256,16 @@ router.post('/close', async function (ctx, next) {
 })
 
 
+
+
+
+//微信二维码支付
 //获取到公众号支付的二维码
 router.get('/wxQRcodePayApi', async (ctx, next) => {
   ctx.body = { code: 0, data: await wxQRcodePayApi(ctx.request.query) }
 })
 
-
-
+//微信jsapi支付
 // 获取微信的支付信息
 router.post('/getWxjaspiInfoByOrder', async function (ctx, next) {
   let payInfo = await jsApicGetOrderPayInfo({  openid:ctx.request.body.openid ,  type:ctx.request.body.type,  orderId: ctx.request.body.orderId, create_ip: get_client_ip(ctx.req) });
@@ -404,6 +274,141 @@ router.post('/getWxjaspiInfoByOrder', async function (ctx, next) {
     data: {...payInfo.wxpayInfo,packageData:payInfo.wxpayInfo.package} ,
     msg: payInfo.msg || 'SUCCESS'
   }
+})
+
+//创建订单
+router.post('/create', async function (ctx, next) {
+  let { goodsJsonStr, remark, peisongType, linkMan, mobile, address, provinceId, cityId, districtId, balanceSwitch } = ctx.request.body;
+  let userId = ctx.session.userId;
+  let amount = 0;
+  let goodsNumber = 0;
+  let orderNumber = moment(new Date()).format('YYYYMMDDHHmmss') + '' + Number(Math.random() * 100).toFixed(0)
+  let goodsList = JSON.parse(goodsJsonStr);
+  let resData = {};
+  // [{"goodsId":2,"number":1,"propertyChildIds":""}]
+
+  let errText = ''
+
+  //获取价格
+  for (let i = 0; i < goodsList.length; i++) {
+    let goods = goodsList[i]
+    if (!errText) {
+      let goodsDateSql = await sql.promiseCall({ sql: `select properties, afterSale, minPrice as price,stores,id as goodsId,name as goodsName,pic from goods where id =? limit 0,1`, values: [goods.goodsId] });
+      if (!goodsDateSql.error) {
+        goodsList[i] = { ...goodsList[i], ...goodsDateSql?.results?.[0], property: '' }
+        let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);
+        console.log(delNumber)
+        if (delNumber >= 0) {
+          let jiansql = await sql.promiseCall({ sql: `update goods set  stores = ${delNumber}   where id =?`, values: [goodsDateSql?.results?.[0]?.goodsId] });
+        } else {
+          errText = '库存不足'
+        }
+      } else {
+        errText = goodsDateSql.error.message;
+      }
+    }
+  }
+  //多规格获取价格
+  for (let i = 0; i < goodsList.length; i++) {
+    let goods = goodsList[i]
+    if (!errText && goods.propertyChildIds) {
+      //获取规格名称
+      let property = await propertyChildIdsGetText(goods.propertyChildIds,goods.properties)
+      let goodsDateSql = await sql.promiseCall({ sql: `select  price,stores,id , img from skulist where goodsId =? and propertyChildIds=?  limit 0,1`, values: [goods.goodsId, goods.propertyChildIds] });
+      if (!goodsDateSql.error && goodsDateSql?.results?.[0]?.price) {
+        //更新价格
+        goodsList[i] = { ...goodsList[i], price: goodsDateSql?.results?.[0]?.price || 0, property }
+
+        //商品图片更换
+        if( goodsDateSql?.results?.[0]?.img){
+          goodsList[i].pic = goodsDateSql?.results?.[0]?.img
+        }
+
+        //减库存
+        let delNumber = Number(goodsDateSql?.results?.[0]?.stores) - Number(goodsList[i].number);
+        if (delNumber >= 0) {
+          let jiansql = await sql.promiseCall({ sql: `update skulist set  stores = ${delNumber}   where id =?`, values: [goodsDateSql?.results?.[0]?.id] });
+        } else {
+          errText = '库存不足'
+        }
+      } else {
+        errText = goodsDateSql.error.message;
+      }
+    }
+  }
+  //结算价格个数
+  if (!errText) {
+    for (let i = 0; i < goodsList.length; i++) {
+      amount += goodsList[i].price * goodsList[i].number;
+    }
+    goodsNumber += goodsList.length;
+  }
+
+
+
+  //放入数据库 
+  if (!errText) {
+    let orderInfoSql = await sql.promiseCall({
+      sql: `INSERT INTO orderInfo (orderNumber, amountReal, amount,goodsNumber,isNeedLogistics,userId,remark,balanceSwitch)
+     VALUES(?,?,?,?,?,?,?,?);`,
+      values: [orderNumber, amount, amount, goodsNumber, peisongType == 'kd' ? 1 : 0, userId, remark, balanceSwitch]
+    })
+    if (orderInfoSql.error) {
+      errText = orderInfoSql.error.message
+    }
+  }
+
+
+  //提取信息用于展示
+  if (!errText) {
+    let orderInfoSql = await sql.promiseCall({ sql: `select * from orderInfo where orderNumber = ? limit 0 ,1`, values: [orderNumber] })
+    if (!orderInfoSql.error) {
+      resData = orderInfoSql.results[0] || {}
+    } else {
+      errText = orderInfoSql.error.message
+    }
+  }
+
+  //物流地址保存数据库
+  if (!errText && peisongType == 'kd') {
+    let orderInfoSql = await sql.promiseCall({
+      sql: `INSERT INTO logistics ( address, linkMan, mobile, provinceId, districtId, orderId, cityId)
+  VALUES (?,?,?,?,?,?,?);`,
+      values: [address, linkMan, mobile, provinceId, districtId, resData.id, cityId]
+    })
+    if (orderInfoSql.error) {
+      errText = orderInfoSql.error.message
+    }
+  }
+
+  //单个商品记录放入订单商品表
+  if (!errText) {
+    for (let i = 0; i < goodsList.length; i++) {
+      if (!errText) {
+        let item = goodsList[i]
+        let orderItemSql = await sql.promiseCall({
+          sql: `INSERT INTO orderItem (goodsId, number, propertyChildIds, property, orderId, amountSingle, goodsName, pic,afterSale)
+          VALUES(?,?,?,?,?,?,?,?,?);`,
+          values: [item.goodsId, item.number, item.propertyChildIds, item.property || '', resData.id, item.price, item.goodsName, item.pic, item.afterSale]
+        })
+        if (orderItemSql.error) {
+          errText = orderItemSql.error.message
+        }
+      }
+    }
+  }
+
+  // 创建下单日志
+  if (!errText) {
+    await logsSql({ orderId: resData.id, type: balanceSwitch })
+  }
+
+  if (!errText) {
+    ctx.body = { "code": 0, "data": { orderData: resData }, "msg": "success" }
+  } else {
+    ctx.body = { "code": -1, msg: errText }
+  }
+
 })
 
 //进行付款 余额的支付方式
@@ -566,13 +571,6 @@ value(?,?,?,?,?,?,?)
 
   ctx.body = { "code": 0 }
 })
-
-
-
-
-
-
-
 
 
 

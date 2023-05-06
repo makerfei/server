@@ -127,12 +127,6 @@ const pngTotransparent = (filePath, fullLocalPath,) => {
 }
 
 
-
-
-
-
-
-
 //传输到cos
 const upToCos = (filePath, fullPathCos) => {
     return new Promise((res, inj) => {

@@ -212,10 +212,6 @@ router.get('/shipping-address/detail/v2', async function (ctx, next) {
   }
 })
 
-
-
-
-
 //新增加地址
 router.post('/shipping-address/add', async function (ctx, next) {
   let { address, linkMan, mobile, isDefault, provinceId, cityId, districtId, areaStr, id } = ctx.request.body;
