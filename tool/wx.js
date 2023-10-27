@@ -74,7 +74,7 @@ module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip, ope
     let userInfo = {} //用户信息
     let resData = { wxpayInfo: {}, msg: '' }
     //订单唯独查询
-    orderIdInfo = await sql.promiseCall({ sql: `select amount, userId,orderNumber,wxPayData from orderinfo where id=? and isPay =0 limit 0,1`, values: [orderId] }).then(({ error, results }) => {
+    orderIdInfo = await sql.promiseCall({ sql: `select amount, userId,orderNumber,payData from orderinfo where id=? and isPay =0 limit 0,1`, values: [orderId] }).then(({ error, results }) => {
         return !error && results.length > 0 && results[0] || {}
     })
     if (!orderIdInfo.orderNumber) {
@@ -82,14 +82,14 @@ module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip, ope
     }
     let hasRigthPayInfo = false;
     if (!errText) {
-        let wxPayData = orderIdInfo.wxPayData && JSON.parse(orderIdInfo.wxPayData) || {}
-        if (wxPayData.status == 200 && ((type == 'native' && wxPayData.code_url || type == 'h5' && wxPayData.h5_url) || (wxPayData.prepay_id && type == 'wx'))) {
+        let payData = orderIdInfo.payData && JSON.parse(orderIdInfo.payData) || {}
+        if (payData.status == 200 && ((type == 'native' && payData.code_url || type == 'h5' && payData.h5_url) || (payData.prepay_id && type == 'wx'))) {
             hasRigthPayInfo = true
         }
     }
-    //如果有 wxPayData 且正确  直接就返回了
+    //如果有 payData 且正确  直接就返回了
     if (hasRigthPayInfo) {
-        resData.wxpayInfo = wxpayInfo.wxPayData;
+        resData.wxpayInfo = wxpayInfo.payData;
     } else if (!errText) { //没有或 订单支付错误就新建
         userInfo = await sql.promiseCall({ sql: `select weixin_openid  from user where id=?  limit 0,1`, values: [orderIdInfo.userId] }).then(({ error, results }) => {
             return !error && results.length > 0 && results[0] || {}
@@ -99,7 +99,7 @@ module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip, ope
         }
         //新微信支付信息创建
         if (!errText) {
-            resData.wxpayInfo = await jsApicCeateOrder({ type, total_fee: orderIdInfo.amount, openid: openid || userInfo.weixin_openid, body: '街道购支付', bookingNo: orderIdInfo.orderNumber, create_ip })
+            resData.wxpayInfo = await jsApicCeateOrder({ type, total_fee: orderIdInfo.amount, openid: openid || userInfo.weixin_openid, body: '非狐-街道购支付', bookingNo: orderIdInfo.orderNumber, create_ip })
         }
     }
     resData.msg = errText;
@@ -135,7 +135,7 @@ let jsApicCeateOrder = async function (data) {
                  type == 'native' ? await pay.transactions_native(params) : 
                  {};
     //保存支付的信息
-    sql.promiseCall({ sql: `update orderinfo set wxPayData = ? where  orderNumber = ?`, values: [JSON.stringify(payinf), bookingNo] })
+    sql.promiseCall({ sql: `update orderinfo set payData = ? where  orderNumber = ?`, values: [JSON.stringify(payinf), bookingNo] })
     //返回支付
     return payinf
 }
