@@ -185,7 +185,7 @@ CREATE TABLE `orderinfo` (
   `isPay` tinyint(1) NOT NULL DEFAULT '0',
   `amountLogistics` int(11) NOT NULL DEFAULT '0',
   `balanceSwitch` varchar(10) NOT NULL DEFAULT '',
-  `wxPayData` varchar(1000) NOT NULL DEFAULT '',
+  `payData` varchar(1000) NOT NULL DEFAULT '',
   `transaction_id` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=405 DEFAULT CHARSET=utf8mb4;
