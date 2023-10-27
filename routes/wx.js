@@ -26,6 +26,18 @@ router.get('/wxLogin', async function (ctx, next) {
     ctx.body = { code: 0, data: { wxInfo, userInfo, token } }
 })
 
+
+//获取微信的openid
+router.get('/getWxOpenId', async function (ctx, next) {
+    const { code } = ctx.request.query;
+    let wxInfo = await baseInfo(code);
+    ctx.body = { code: 0, data:wxInfo}
+})
+
+
+
+
+
 router.all('/payCallBack', async function (ctx, next) {
     let emailTotal = 0;
     let emailPayopenId = 0;

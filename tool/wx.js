@@ -107,7 +107,7 @@ module.exports.jsApicGetOrderPayInfo = async function ({ orderId, create_ip, ope
 }
 
 
-//   确定是新单，直接创建  微信支付jsapi下单
+//  确定是新单，直接创建  微信支付jsapi下单
 let jsApicCeateOrder = async function (data) {
     const { total_fee, openid, body, bookingNo, create_ip, type } = data
     let params = {
